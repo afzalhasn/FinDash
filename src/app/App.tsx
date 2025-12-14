@@ -1,4 +1,5 @@
-import { AppProvider, useApp } from './context/AppContext';
+"use client";
+import { AppProvider, useApp, AppPage, UserRole } from './context/AppContext';
 import { LoginPage } from './pages/LoginPage';
 import { DashboardPage } from './pages/DashboardPage';
 import { AddEntryPage } from './pages/AddEntryPage';
@@ -8,44 +9,42 @@ import { AddInvestorPage } from './pages/AddInvestorPage';
 import { NewAccountPage } from './pages/NewAccountPage';
 import { Toaster } from 'sonner';
 
+const pageComponents: Record<AppPage, JSX.Element> = {
+  login: <LoginPage />,
+  dashboard: <DashboardPage />,
+  'add-entry': <AddEntryPage />,
+  history: <TransactionsPage />,
+  insights: <ProductInsightsPage />,
+  'add-investor': <AddInvestorPage />,
+  'new-account': <NewAccountPage />,
+};
+
+const PAGE_ACCESS: Partial<Record<AppPage, UserRole[]>> = {
+  'add-entry': ['admin', 'partner'],
+  'add-investor': ['admin'],
+  'new-account': ['admin'],
+};
+
+function canAccess(page: AppPage, role?: UserRole): boolean {
+  const allowedRoles = PAGE_ACCESS[page];
+  if (!allowedRoles) return true;
+  return role ? allowedRoles.includes(role) : false;
+}
+
 function AppRouter() {
   const { currentPage, user } = useApp();
 
-  // Redirect to login if not authenticated
-  if (!user && currentPage !== 'login') {
-    return <LoginPage />;
+  // Redirect unauthenticated users to login
+  if (!user) {
+    return pageComponents.login;
   }
 
-  switch (currentPage) {
-    case 'login':
-      return <LoginPage />;
-    case 'dashboard':
-      return <DashboardPage />;
-    case 'add-entry':
-      // Admin & Partner can access add entry page
-      if (user?.role === 'admin' || user?.role === 'partner') {
-        return <AddEntryPage />;
-      }
-      return <DashboardPage />;
-    case 'history':
-      return <TransactionsPage />;
-    case 'insights':
-      return <ProductInsightsPage />;
-    case 'add-investor':
-      // Only admin can access investor page
-      if (user?.role === 'admin') {
-        return <AddInvestorPage />;
-      }
-      return <DashboardPage />;
-    case 'new-account':
-      // Only admin can access account management page
-      if (user?.role === 'admin') {
-        return <NewAccountPage />;
-      }
-      return <DashboardPage />;
-    default:
-      return <DashboardPage />;
+  // Authenticated but accessing forbidden page
+  if (!canAccess(currentPage, user.role)) {
+    return pageComponents.dashboard;
   }
+
+  return pageComponents[currentPage] ?? pageComponents.dashboard;
 }
 
 export default function App() {

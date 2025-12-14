@@ -37,6 +37,7 @@ yarn-debug.log*
 # Build outputs
 dist/
 build/
+/.next/
 *.min.js
 *.min.css
 
@@ -51,7 +52,6 @@ tmp/
 temp/
 
 # Package managers
-package-lock.json
 yarn.lock
 poetry.lock
 

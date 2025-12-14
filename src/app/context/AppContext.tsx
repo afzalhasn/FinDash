@@ -1,8 +1,19 @@
-import React, { createContext, useContext, useState, ReactNode, useEffect } from 'react';
+"use client";
+"use client";
+
+import React, {
+  createContext,
+  useContext,
+  useState,
+  ReactNode,
+  useEffect,
+  useCallback,
+} from 'react';
 
 export type UserRole = 'admin' | 'partner' | 'staff';
 export type QuantityType = 'kg' | 'dozen' | 'pack' | 'unit' | 'custom';
 export type ExpenseCategory = 'rent' | 'transport' | 'salary' | 'other';
+export type AppPage = 'login' | 'dashboard' | 'add-entry' | 'history' | 'insights' | 'add-investor' | 'new-account';
 
 export interface User {
   id: string;
@@ -60,11 +71,19 @@ interface AppContextType {
   addInvestor: (name: string) => void;
   addInvestment: (investorId: string, amount: number, notes?: string) => void;
   addWithdrawal: (investorId: string, amount: number, notes?: string) => void;
-  currentPage: string;
-  setCurrentPage: (page: string) => void;
+  currentPage: AppPage;
+  setCurrentPage: (page: AppPage) => void;
 }
 
 const AppContext = createContext<AppContextType | undefined>(undefined);
+
+const STORAGE_KEYS = {
+  transactions: 'findash_v2_transactions',
+  investors: 'findash_v2_investors',
+  users: 'findash_v2_users',
+};
+
+const DEFAULT_PAGE: AppPage = 'login';
 
 // Mock users with 3 roles
 const initialUsers: User[] = [
@@ -209,30 +228,40 @@ const initialInvestors: Investor[] = [
   },
 ];
 
+const safeParse = <T,>(key: string, fallback: T): T => {
+  if (typeof window === 'undefined') return fallback;
+  try {
+    const value = localStorage.getItem(key);
+    if (!value) return fallback;
+    return JSON.parse(value) as T;
+  } catch (error) {
+    console.warn(`Failed to parse localStorage key "${key}"`, error);
+    return fallback;
+  }
+};
+
 export function AppProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<User | null>(null);
   const [users, setUsers] = useState<User[]>(initialUsers);
   const [transactions, setTransactions] = useState<Transaction[]>(initialTransactions);
   const [investors, setInvestors] = useState<Investor[]>(initialInvestors);
-  const [currentPage, setCurrentPage] = useState('login');
+  const [currentPage, setCurrentPage] = useState<AppPage>(DEFAULT_PAGE);
 
   // Load persisted data from localStorage
   useEffect(() => {
-    const savedTransactions = localStorage.getItem('findash_v2_transactions');
-    const savedInvestors = localStorage.getItem('findash_v2_investors');
-    const savedUsers = localStorage.getItem('findash_v2_users');
-    
-    if (savedTransactions) {
-      const parsed = JSON.parse(savedTransactions);
-      setTransactions(parsed.map((t: any) => ({
+    const savedTransactions = safeParse<Transaction[]>(STORAGE_KEYS.transactions, []);
+    const savedInvestors = safeParse<Investor[]>(STORAGE_KEYS.investors, []);
+    const savedUsers = safeParse<User[]>(STORAGE_KEYS.users, []);
+
+    if (savedTransactions.length) {
+      setTransactions(savedTransactions.map((t: any) => ({
         ...t,
         date: new Date(t.date)
       })));
     }
-    
-    if (savedInvestors) {
-      const parsed = JSON.parse(savedInvestors);
-      setInvestors(parsed.map((inv: any) => ({
+
+    if (savedInvestors.length) {
+      setInvestors(savedInvestors.map((inv: any) => ({
         ...inv,
         lastActivityDate: new Date(inv.lastActivityDate),
         investments: inv.investments.map((i: any) => ({
@@ -242,77 +271,68 @@ export function AppProvider({ children }: { children: ReactNode }) {
       })));
     }
 
-    if (savedUsers) {
-      setUsers(JSON.parse(savedUsers));
+    if (savedUsers.length) {
+      setUsers(savedUsers);
     }
   }, []);
 
   // Save data to localStorage
   useEffect(() => {
-    if (transactions.length > 0) {
-      localStorage.setItem('findash_v2_transactions', JSON.stringify(transactions));
-    }
+    localStorage.setItem(STORAGE_KEYS.transactions, JSON.stringify(transactions));
   }, [transactions]);
 
   useEffect(() => {
-    if (investors.length > 0) {
-      localStorage.setItem('findash_v2_investors', JSON.stringify(investors));
-    }
+    localStorage.setItem(STORAGE_KEYS.investors, JSON.stringify(investors));
   }, [investors]);
 
   useEffect(() => {
-    if (users.length > 0) {
-      localStorage.setItem('findash_v2_users', JSON.stringify(users));
-    }
+    localStorage.setItem(STORAGE_KEYS.users, JSON.stringify(users));
   }, [users]);
 
-  const login = (email: string, password: string): boolean => {
-    // Mock authentication - password is "password" for all users
+  const login = useCallback((email: string, password: string): boolean => {
     const foundUser = users.find(u => u.email === email && !u.disabled);
-    if (foundUser && password === 'password') {
-      setUser(foundUser);
-      setCurrentPage('dashboard');
-      return true;
-    }
-    return false;
-  };
+    if (!foundUser || password !== 'password') return false;
 
-  const logout = () => {
+    setUser(foundUser);
+    setCurrentPage('dashboard');
+    return true;
+  }, [users]);
+
+  const logout = useCallback(() => {
     setUser(null);
     setCurrentPage('login');
-  };
+  }, []);
 
-  const addUser = (userData: Omit<User, 'id'>) => {
+  const addUser = useCallback((userData: Omit<User, 'id'>) => {
     const newUser: User = {
       ...userData,
       id: Date.now().toString(),
     };
     setUsers(prev => [...prev, newUser]);
-  };
+  }, []);
 
-  const updateUserRole = (userId: string, role: UserRole) => {
+  const updateUserRole = useCallback((userId: string, role: UserRole) => {
     setUsers(prev => prev.map(u => 
       u.id === userId ? { ...u, role } : u
     ));
-  };
+  }, []);
 
-  const disableUser = (userId: string) => {
+  const disableUser = useCallback((userId: string) => {
     setUsers(prev => prev.map(u => 
       u.id === userId ? { ...u, disabled: true } : u
     ));
-  };
+  }, []);
 
-  const addTransaction = (transaction: Omit<Transaction, 'id' | 'personName'>) => {
+  const addTransaction = useCallback((transaction: Omit<Transaction, 'id' | 'personName'>) => {
     const newTransaction: Transaction = {
       ...transaction,
       id: Date.now().toString(),
       personName: user?.name || 'Unknown',
     };
     setTransactions(prev => [newTransaction, ...prev]);
-  };
+  }, [user]);
 
-  const getAvailableProducts = (): string[] => {
-    // Get unique products from buy transactions
+  const getAvailableProducts = useCallback((): string[] => {
     const products = new Set<string>();
     transactions.forEach(t => {
       if (t.type === 'buy' && t.productName) {
@@ -320,9 +340,9 @@ export function AppProvider({ children }: { children: ReactNode }) {
       }
     });
     return Array.from(products).sort();
-  };
+  }, [transactions]);
 
-  const addInvestor = (name: string) => {
+  const addInvestor = useCallback((name: string) => {
     const newInvestor: Investor = {
       id: Date.now().toString(),
       name,
@@ -333,9 +353,9 @@ export function AppProvider({ children }: { children: ReactNode }) {
       investments: [],
     };
     setInvestors(prev => [...prev, newInvestor]);
-  };
+  }, []);
 
-  const addInvestment = (investorId: string, amount: number, notes?: string) => {
+  const addInvestment = useCallback((investorId: string, amount: number, notes?: string) => {
     setInvestors(prev => prev.map(inv => {
       if (inv.id === investorId) {
         const newActivity: InvestmentActivity = {
@@ -355,9 +375,9 @@ export function AppProvider({ children }: { children: ReactNode }) {
       }
       return inv;
     }));
-  };
+  }, []);
 
-  const addWithdrawal = (investorId: string, amount: number, notes?: string) => {
+  const addWithdrawal = useCallback((investorId: string, amount: number, notes?: string) => {
     setInvestors(prev => prev.map(inv => {
       if (inv.id === investorId) {
         const newActivity: InvestmentActivity = {
@@ -377,7 +397,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
       }
       return inv;
     }));
-  };
+  }, []);
 
   return (
     <AppContext.Provider
