@@ -1,29 +1,44 @@
-"""
-Database helpers. These are placeholders until SQLAlchemy is wired in.
-"""
 from contextlib import contextmanager
 from typing import Generator
 
-from .config import Settings
+from sqlalchemy import create_engine
+from sqlalchemy.orm import Session, sessionmaker
+
+from .config import Settings, get_settings
 
 
-def create_database_engine(settings: Settings):
-    """
-    Placeholder factory for a database engine.
-    Replace with actual SQLAlchemy engine once dependencies are added.
-    """
-    return {"url": settings.database_url}
+_engine = None
+_SessionFactory: sessionmaker | None = None
+
+
+def get_engine(settings: Settings | None = None):
+    """Create or return a cached SQLAlchemy engine."""
+    global _engine
+    if _engine is None:
+        settings = settings or get_settings()
+        _engine = create_engine(settings.database_url, future=True)
+    return _engine
+
+
+def get_session_factory(settings: Settings | None = None) -> sessionmaker:
+    """Return a session factory bound to the configured engine."""
+    global _SessionFactory
+    if _SessionFactory is None:
+        engine = get_engine(settings)
+        _SessionFactory = sessionmaker(bind=engine, autoflush=False, autocommit=False, future=True)
+    return _SessionFactory
 
 
 @contextmanager
-def get_db_session(settings: Settings) -> Generator[dict, None, None]:
-    """
-    Placeholder DB session context manager.
-    Provides a dict representing the session for now.
-    """
-    engine = create_database_engine(settings)
-    session = {"engine": engine, "closed": False}
+def get_db_session(settings: Settings | None = None) -> Generator[Session, None, None]:
+    """Context manager yielding a database session."""
+    factory = get_session_factory(settings)
+    session: Session = factory()
     try:
         yield session
+        session.commit()
+    except Exception:
+        session.rollback()
+        raise
     finally:
-        session["closed"] = True
+        session.close()

@@ -21,17 +21,17 @@ This roadmap breaks work into phases for backend and frontend teams. Complete ea
   - Story: Define SQLAlchemy models + Alembic migrations.
     - Task 1 ✅: Model `User`, `Transaction`, `Investor`, `InvestmentActivity`, `AuditLog`.
     - Task 2 ✅: Create initial Alembic revision and upgrade scripts.
-    - Task 3: Seed demo data (admin/partner/staff; sample transactions & investors).
+    - Task 3 ✅: Seed demo data (admin/partner/staff; sample transactions & investors).
   - Story: Repository & service factories.
     - Task 1 ✅: Implement repositories per entity.
-    - Task 2: Build service factory functions for auth, transactions, investors, insights.
+    - Task 2 ✅: Build service factory functions for auth, transactions, investors, insights.
 
 ### Phase 3 – Authentication & User Management
 - **Epic: Auth Stack**
   - Story: Implement OAuth2 password flow.
-    - Task 1: Hash passwords with `passlib`.
-    - Task 2: Implement JWT generation/verification, refresh tokens, and revocation list.
-    - Task 3: Add `/auth/login`, `/auth/refresh`, `/auth/logout`, `/auth/me` routes + tests.
+    - Task 1 ✅: Hash passwords with `passlib`.
+    - Task 2 ✅: Implement JWT generation/verification, refresh tokens, and revocation list.
+    - Task 3 ✅: Add `/auth/login`, `/auth/refresh`, `/auth/logout`, `/auth/me` routes + tests.
 - **Epic: Account Management**
   - Story: User CRUD APIs.
     - Task 1: Implement `/users` endpoints with role guards.
