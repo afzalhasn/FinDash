@@ -9,11 +9,11 @@ This roadmap breaks work into phases for backend and frontend teams. Complete ea
 ### Phase 1 – Foundations & Infrastructure
 - **Epic: Monorepo & Environment Setup**
   - Story: Initialize backend project structure.
-    - Task 1: Scaffold FastAPI app with application factory (`backend/app/main.py`).
-    - Task 2: Add core modules (`config`, `database`, `security`, `logging`).
+    - Task 1 ✅: Scaffold FastAPI app with application factory (`backend/app/main.py`).
+    - Task 2 ✅: Add core modules (`config`, `database`, `security`, `logging`).
   - Story: Containerize services.
     - Task 1: Create backend Dockerfile (multi-stage).
-    - Task 2: Define `docker-compose.yml` entries for backend, Postgres, pgAdmin.
+    - Task 2: Define `docker-compose.yml` entries for backend, frontend, Postgres, pgAdmin.
     - Task 3: Provide `.env.example` and document setup.
 
 ### Phase 2 – Database & Models
