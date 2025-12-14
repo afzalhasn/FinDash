@@ -26,8 +26,8 @@ export function LoginPage() {
           <div className="inline-flex items-center justify-center w-16 h-16 bg-indigo-600 rounded-2xl mb-4">
             <LogIn className="w-8 h-8 text-white" />
           </div>
-          <h1 className="text-indigo-600 mb-2">FinDash</h1>
-          <p className="text-gray-600">Cash Flow Management System</p>
+          <h1 className="text-indigo-600 mb-2">Finance Dashboard</h1>
+          {/* <p className="text-gray-600">Cash Flow Management System</p> */}
         </div>
 
         {/* Login Form */}
