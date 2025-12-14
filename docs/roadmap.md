@@ -20,10 +20,10 @@ This roadmap breaks work into phases for backend and frontend teams. Complete ea
 - **Epic: Persistence Layer**
   - Story: Define SQLAlchemy models + Alembic migrations.
     - Task 1 ✅: Model `User`, `Transaction`, `Investor`, `InvestmentActivity`, `AuditLog`.
-    - Task 2: Create initial Alembic revision and upgrade scripts.
+    - Task 2 ✅: Create initial Alembic revision and upgrade scripts.
     - Task 3: Seed demo data (admin/partner/staff; sample transactions & investors).
   - Story: Repository & service factories.
-    - Task 1: Implement repositories per entity.
+    - Task 1 ✅: Implement repositories per entity.
     - Task 2: Build service factory functions for auth, transactions, investors, insights.
 
 ### Phase 3 – Authentication & User Management
