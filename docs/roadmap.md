@@ -34,18 +34,18 @@ This roadmap breaks work into phases for backend and frontend teams. Complete ea
     - Task 3 ✅: Add `/auth/login`, `/auth/refresh`, `/auth/logout`, `/auth/me` routes + tests.
 - **Epic: Account Management**
   - Story: User CRUD APIs.
-    - Task 1: Implement `/users` endpoints with role guards.
-    - Task 2: Add audit logging for role/disable updates.
-    - Task 3: Write unit tests for repositories and services.
+    - Task 1 ✅: Implement `/users` endpoints with role guards.
+    - Task 2 ✅: Add audit logging for role/disable updates.
+    - Task 3 ✅: Write unit tests for repositories and services.
 
 ### Phase 4 – Transactions & Insights
 - **Epic: Transaction Management**
   - Story: CRUD endpoints for transactions.
-    - Task 1: Implement GET/POST `/transactions`.
-    - Task 2: Add filters (type, date range, text search) + pagination.
-    - Task 3: Add PATCH/DELETE endpoints with validation (sell requires stock).
+    - Task 1 ✅: Implement GET/POST `/transactions`.
+    - Task 2 ✅: Add filters (type, date range, text search) + pagination.
+    - Task 3 ✅: Add PATCH/DELETE endpoints with validation (sell requires stock).
   - Story: Product availability helper.
-    - Task 1: Implement `/products/available` endpoint.
+    - Task 1 ✅: Implement `/products/available` endpoint.
     - Task 2: Cache results when dataset grows (optional).
 - **Epic: Insights Services**
   - Story: Dashboard summaries.

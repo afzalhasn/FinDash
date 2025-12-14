@@ -1,6 +1,7 @@
 from dataclasses import dataclass
 from datetime import datetime, timedelta, timezone
 from typing import Optional
+import uuid
 
 from fastapi import HTTPException, status
 from jose import JWTError, jwt
@@ -9,7 +10,7 @@ from passlib.context import CryptContext
 from .config import Settings
 
 
-pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
+pwd_context = CryptContext(schemes=["pbkdf2_sha256"], deprecated="auto")
 
 
 def create_password_hash(password: str) -> str:
@@ -28,8 +29,9 @@ class TokenPair:
 
 def create_access_token(subject: str, settings: Settings, expires_minutes: Optional[int] = None) -> str:
     expires_delta = timedelta(minutes=expires_minutes or settings.access_token_expire_minutes)
-    expire = datetime.now(timezone.utc) + expires_delta
-    payload = {"sub": subject, "exp": expire}
+    now = datetime.now(timezone.utc)
+    expire = now + expires_delta
+    payload = {"sub": subject, "exp": expire, "iat": now, "jti": str(uuid.uuid4())}
     return jwt.encode(payload, settings.jwt_secret_key, algorithm=settings.jwt_algorithm)
 
 

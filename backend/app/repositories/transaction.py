@@ -48,3 +48,6 @@ class TransactionRepository(BaseRepository[Transaction]):
         )
         products = {row[0] for row in self.session.execute(stmt)}
         return sorted(products)
+
+    def delete(self, transaction: Transaction) -> None:
+        self.session.delete(transaction)

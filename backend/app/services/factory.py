@@ -6,11 +6,13 @@ from app.repositories import (
     TransactionRepository,
     InvestorRepository,
     InvestmentActivityRepository,
+    AuditLogRepository,
 )
 from .auth import AuthService
 from .transactions import TransactionService
 from .investors import InvestorService
 from .insights import InsightService
+from .users import UserService
 
 
 class ServiceFactory:
@@ -32,3 +34,9 @@ class ServiceFactory:
 
     def insight_service(self) -> InsightService:
         return InsightService(session=self.session)
+
+    def user_service(self) -> UserService:
+        return UserService(
+            users=UserRepository(self.session),
+            audit_logs=AuditLogRepository(self.session),
+        )

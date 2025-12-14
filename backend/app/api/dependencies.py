@@ -9,7 +9,14 @@ from app.core.database import get_session_factory
 from app.core.security import decode_token
 from app.models import User
 from app.repositories import UserRepository
-from app.services import ServiceFactory, AuthService, TransactionService, InvestorService, InsightService
+from app.services import (
+    ServiceFactory,
+    AuthService,
+    TransactionService,
+    InvestorService,
+    InsightService,
+    UserService,
+)
 
 oauth2_scheme = OAuth2PasswordBearer(tokenUrl="/api/v1/auth/login")
 
@@ -48,6 +55,9 @@ def get_insight_service(factory: ServiceFactory = Depends(get_service_factory)) 
     return factory.insight_service()
 
 
+def get_user_service(factory: ServiceFactory = Depends(get_service_factory)) -> UserService:
+    return factory.user_service()
+
 def get_current_user(
     token: str = Depends(oauth2_scheme),
     session: Session = Depends(get_db_session),
@@ -65,3 +75,12 @@ def get_current_user(
     if user.disabled:
         raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="User disabled")
     return user
+
+
+def require_roles(*roles: str):
+    def dependency(user: User = Depends(get_current_user)) -> User:
+        if user.role not in roles:
+            raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Insufficient permissions")
+        return user
+
+    return dependency
