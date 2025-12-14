@@ -13,7 +13,7 @@ class Settings(BaseSettings):
     log_level: str = Field(default="INFO", env="FINDASH_LOG_LEVEL")
 
     database_url: str = Field(
-        default="postgresql+psycopg://postgres:postgres@postgres:5432/findash",
+        default="postgresql://findash:findash@db:5432/findash",
         env="DATABASE_URL",
     )
 

@@ -16,6 +16,7 @@ build/
 .env.example
 .env.*.local
 *.next/
+.dockerignore
 
 # IDE and Editor
 .vscode/
