@@ -4,12 +4,12 @@ This document translates the current frontend context logic (`frontend/src/app/c
 
 ## 1. Conventions
 
-1. **Auth**: OAuth2 password flow with JWT access tokens. Use `Authorization: Bearer <token>` on authenticated routes.
+1. **Auth**: OAuth2 password flow with JWT access tokens. Use `Authorization: Bearer <token>` on authenticated routes. Refresh tokens are HTTP-only cookies or persisted per client.
 2. **Roles**: `admin`, `partner`, `staff`. Role gates reuse the same matrix enforced by the frontend router.
-3. **Errors**: Consistent JSON payload:
-   ```json
-   { "detail": "Human-readable message", "code": "ERROR_CODE" }
-   ```
+3. **Errors**: Consistent JSON payload and correlation ID is echoed via `X-Correlation-ID` header:
+  ```json
+  { "detail": "Human-readable message", "code": "ERROR_CODE", "correlationId": "<optional-id>" }
+  ```
 4. **Dates**: ISO 8601 strings in UTC.
 5. **Pagination**: Cursor-based (`nextCursor`, `prevCursor`) or simple `page`/`pageSize` where noted.
 
@@ -32,7 +32,8 @@ This document translates the current frontend context logic (`frontend/src/app/c
 **Login response**
 ```json
 {
-  "accessToken": "jwt",
+  "accessToken": "jwt-access",
+  "refreshToken": "jwt-refresh",
   "expiresIn": 3600,
   "user": {
     "id": "1",
@@ -42,6 +43,11 @@ This document translates the current frontend context logic (`frontend/src/app/c
     "disabled": false
   }
 }
+```
+
+**Refresh failure response**
+```json
+{ "detail": "Refresh token revoked", "code": "TOKEN_REVOKED", "correlationId": "..." }
 ```
 
 ---

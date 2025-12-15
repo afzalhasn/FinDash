@@ -71,18 +71,19 @@ This roadmap breaks work into phases for backend and frontend teams. Complete ea
 
 ### Phase A – Preparation & API Client
 - **Epic: API Client & State Refactor**
-  - Story: Establish API layer.
-    - Task 1: Create `src/lib/api.ts` with base client and interceptors.
-    - Task 2: Introduce React Query/SWR setup for data fetching.
+  - Story: Establish API layer & contracts.
+    - Task 1 ✅: Create `src/lib/api.ts` with base client and interceptors.
+    - Task 2 ✅: Introduce React Query/SWR setup for data fetching and shared error handling.
+    - Task 3 ✅: Document API contracts/error states with backend (`docs/api-design.md` alignment).
   - Story: Context cleanup preparation.
     - Task 1: Isolate UI-only state vs. data state inside `AppContext`.
-    - Task 2: Add feature flags/env vars to switch between mock and API data.
+    - Task 2: Add feature flags/env vars to switch between mock and API data and set `NEXT_PUBLIC_API_BASE_URL`.
 
 ### Phase B – Authentication Integration
 - **Epic: Auth Flow Migration**
   - Story: Wire login/logout to backend.
     - Task 1: Replace `login()` to call `/auth/login`, store user profile from API.
-    - Task 2: Handle token refresh & logout (`/auth/logout`) in context.
+    - Task 2: Decide token storage strategy (HTTP-only cookie vs memory) and handle refresh & logout (`/auth/logout`) in context/middleware.
     - Task 3: Update protected navigation logic to use backend role info.
 
 ### Phase C – Transactions & Dashboard
@@ -120,7 +121,7 @@ This roadmap breaks work into phases for backend and frontend teams. Complete ea
   - Story: UX Enhancements.
     - Task 1: Show loading/error states from React Query.
     - Task 2: Surface backend validation errors via toasts/forms.
-    - Task 3: Final QA pass compared to Figma mock to ensure parity.
+    - Task 3: Add end-to-end tests (Cypress/Playwright) covering auth, transactions, investors, and final QA against Figma.
 
 ---
 

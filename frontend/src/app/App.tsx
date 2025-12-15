@@ -1,5 +1,7 @@
 "use client";
 import { AppProvider, useApp, AppPage, UserRole } from './context/AppContext';
+import { QueryClientProvider } from '@tanstack/react-query';
+import { queryClient } from '../lib/react-query';
 import { LoginPage } from './pages/LoginPage';
 import { DashboardPage } from './pages/DashboardPage';
 import { AddEntryPage } from './pages/AddEntryPage';
@@ -49,9 +51,11 @@ function AppRouter() {
 
 export default function App() {
   return (
-    <AppProvider>
-      <AppRouter />
-      <Toaster position="top-right" richColors />
-    </AppProvider>
+    <QueryClientProvider client={queryClient}>
+      <AppProvider>
+        <AppRouter />
+        <Toaster position="top-right" richColors />
+      </AppProvider>
+    </QueryClientProvider>
   );
 }
