@@ -1,12 +1,17 @@
-import React, { useState, useMemo } from 'react';
+import React, { useState } from 'react';
 import { useApp, QuantityType, ExpenseCategory } from '../context/AppContext';
-import { ArrowLeft, ShoppingCart, DollarSign, Receipt } from 'lucide-react';
+import { ArrowLeft, ShoppingCart, DollarSign, Receipt, Loader2 } from 'lucide-react';
 import { toast } from 'sonner';
+import { ApiError } from '../../lib/api';
+import { useAvailableProducts, useCreateTransaction, CreateTransactionPayload } from '../../hooks/useTransactions';
 
 type EntryType = 'buy' | 'sell' | 'expense';
 
 export function AddEntryPage() {
-  const { user, addTransaction, getAvailableProducts, setCurrentPage } = useApp();
+  const { user, setCurrentPage } = useApp();
+  const { data: availableProductsData = [], isLoading: productsLoading } = useAvailableProducts();
+  const availableProducts = availableProductsData ?? [];
+  const { mutateAsync: createTransaction, isPending: isSubmitting } = useCreateTransaction();
   const [entryType, setEntryType] = useState<EntryType>('buy');
   
   // Buy/Sell fields
@@ -27,52 +32,65 @@ export function AddEntryPage() {
   const [time, setTime] = useState(new Date().toTimeString().split(' ')[0].slice(0, 5));
   const [notes, setNotes] = useState('');
 
-  const availableProducts = useMemo(() => getAvailableProducts(), [getAvailableProducts]);
-
   const totalAmount = entryType === 'expense' 
-    ? Number(expenseAmount) 
-    : Number(quantity) * Number(pricePerUnit);
+    ? Number(expenseAmount) || 0
+    : (Number(quantity) || 0) * (Number(pricePerUnit) || 0);
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
-    // Validation: Sell must use existing products
     if (entryType === 'sell') {
-      if (!availableProducts.includes(productName)) {
+      if (productsLoading) {
+        toast.info('Loading available products. Please wait a moment.');
+        return;
+      }
+      if (!productName || !availableProducts.includes(productName)) {
         toast.error('Cannot sell a product that hasn\'t been purchased yet!');
         return;
       }
     }
 
+    if (entryType !== 'expense' && !productName) {
+      toast.error('Please select or enter a product name.');
+      return;
+    }
+
     const dateTime = new Date(`${date}T${time}`);
+    const occurredAt = dateTime.toISOString();
+
+    let payload: CreateTransactionPayload;
 
     if (entryType === 'expense') {
-      addTransaction({
+      payload = {
         type: 'expense',
         expenseCategory,
         expenseDescription,
         totalAmount: Number(expenseAmount),
-        date: dateTime,
         notes: notes || undefined,
-      });
-      toast.success('Expense added successfully!');
+        occurredAt,
+      };
     } else {
       const finalQuantityType = quantityType === 'custom' ? (customQuantityType as QuantityType) : quantityType;
-      
-      addTransaction({
+      payload = {
         type: entryType,
         productName,
         quantity: Number(quantity),
         quantityType: finalQuantityType,
         pricePerUnit: Number(pricePerUnit),
         totalAmount,
-        date: dateTime,
         notes: notes || undefined,
-      });
-      toast.success(`${entryType === 'buy' ? 'Purchase' : 'Sale'} added successfully!`);
+        occurredAt,
+      };
     }
 
-    setCurrentPage('dashboard');
+    try {
+      await createTransaction(payload);
+      toast.success(entryType === 'expense' ? 'Expense added successfully!' : `${entryType === 'buy' ? 'Purchase' : 'Sale'} added successfully!`);
+      setCurrentPage('dashboard');
+    } catch (err) {
+      const message = err instanceof ApiError ? err.message : 'Failed to save entry. Please try again.';
+      toast.error(message);
+    }
   };
 
   const handleCancel = () => {
@@ -161,8 +179,12 @@ export function AddEntryPage() {
                 </label>
                 
                 {entryType === 'sell' ? (
-                  // Sell: Must select existing product
-                  availableProducts.length === 0 ? (
+                  productsLoading ? (
+                    <div className="p-4 bg-gray-50 border border-gray-200 rounded-lg flex items-center gap-3 text-gray-600">
+                      <Loader2 className="w-4 h-4 animate-spin" />
+                      <span>Loading products available for sale...</span>
+                    </div>
+                  ) : availableProducts.length === 0 ? (
                     <div className="p-4 bg-yellow-50 border border-yellow-200 rounded-lg">
                       <p className="text-yellow-800">No products available for sale. Please add purchases first.</p>
                     </div>
@@ -173,6 +195,7 @@ export function AddEntryPage() {
                       onChange={(e) => setProductName(e.target.value)}
                       className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
                       required
+                      disabled={isSubmitting}
                     >
                       <option value="">Select a product</option>
                       {availableProducts.map((product) => (
@@ -183,12 +206,19 @@ export function AddEntryPage() {
                 ) : (
                   // Buy: Can select existing or create new
                   <>
-                    {availableProducts.length > 0 && (
+                    {productsLoading && (
+                      <div className="p-3 bg-gray-50 border border-gray-200 rounded-lg flex items-center gap-2 text-gray-600 mb-3">
+                        <Loader2 className="w-4 h-4 animate-spin" />
+                        <span>Loading previously purchased products...</span>
+                      </div>
+                    )}
+                    {!productsLoading && availableProducts.length > 0 && (
                       <select
                         id="productSelection"
                         value={isNewProduct ? '__new__' : productName}
                         onChange={(e) => handleProductSelection(e.target.value)}
                         className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent mb-3"
+                        disabled={isSubmitting}
                       >
                         <option value="">Select existing product</option>
                         {availableProducts.map((product) => (
@@ -405,10 +435,11 @@ export function AddEntryPage() {
           <div className="flex gap-4">
             <button
               type="submit"
-              className="flex-1 bg-indigo-600 text-white py-3 rounded-lg hover:bg-indigo-700 transition-colors"
-              disabled={entryType === 'sell' && availableProducts.length === 0}
+              className="flex-1 bg-indigo-600 text-white py-3 rounded-lg hover:bg-indigo-700 transition-colors flex items-center justify-center gap-2 disabled:opacity-60 disabled:cursor-not-allowed"
+              disabled={isSubmitting || (entryType === 'sell' && (productsLoading || availableProducts.length === 0))}
             >
-              Save Entry
+              {isSubmitting && <Loader2 className="w-4 h-4 animate-spin" />}
+              {isSubmitting ? 'Saving...' : 'Save Entry'}
             </button>
             <button
               type="button"

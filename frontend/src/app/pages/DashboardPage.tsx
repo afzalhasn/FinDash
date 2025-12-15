@@ -2,7 +2,8 @@ import React, { useState, useMemo } from 'react';
 import { useApp } from '../context/AppContext';
 import { Plus, TrendingUp, TrendingDown, DollarSign, Calendar, LogOut, History, BarChart3, Users, UserPlus } from 'lucide-react';
 import { PieChart, Pie, Cell, ResponsiveContainer, Tooltip, Legend, BarChart, Bar, XAxis, YAxis, CartesianGrid } from 'recharts';
-import { startOfWeek, endOfWeek, startOfMonth, endOfMonth, isWithinInterval, format, startOfDay, endOfDay } from 'date-fns';
+import { startOfWeek, endOfWeek, startOfMonth, endOfMonth, format, startOfDay, endOfDay } from 'date-fns';
+import { useInsightSummary, useProductInsights } from '../../hooks/useInsights';
 
 type TimeFilter = 'today' | 'week' | 'month' | 'custom';
 
@@ -47,108 +48,64 @@ export function DashboardPage() {
     }
   }, [timeFilter, customStartDate, customEndDate]);
 
-  // Filter transactions by date range
-  const filteredTransactions = useMemo(() => {
-    return transactions.filter(t => 
-      isWithinInterval(t.date, { start: dateRange.start, end: dateRange.end })
-    );
-  }, [transactions, dateRange]);
+  const { data: summary, isLoading: summaryLoading, isError: summaryError, error: summaryErrorDetails, refetch: refetchSummary } = useInsightSummary({
+    start: dateRange.start,
+    end: dateRange.end,
+  });
 
-  // Calculate summary metrics
-  const summary = useMemo(() => {
-    const purchases = filteredTransactions
-      .filter(t => t.type === 'buy')
-      .reduce((sum, t) => sum + t.totalAmount, 0);
-    
-    const sales = filteredTransactions
-      .filter(t => t.type === 'sell')
-      .reduce((sum, t) => sum + t.totalAmount, 0);
-    
-    const expenses = filteredTransactions
-      .filter(t => t.type === 'expense')
-      .reduce((sum, t) => sum + t.totalAmount, 0);
+  const { data: productInsights = [], isLoading: productLoading, error: productError, refetch: refetchProducts } = useProductInsights({
+    start: dateRange.start,
+    end: dateRange.end,
+  });
 
-    // Calculate total cash in from investors (all time)
-    const totalCashIn = investors.reduce((sum, inv) => sum + inv.netInvestment, 0);
-
-    const profit = sales - purchases - expenses;
-
-    return { purchases, sales, expenses, totalCashIn, profit };
-  }, [filteredTransactions, investors]);
+  const summaryValues = {
+    purchases: summary?.purchases ?? 0,
+    sales: summary?.sales ?? 0,
+    expenses: summary?.expenses ?? 0,
+    profit: summary?.profit ?? 0,
+    totalCashIn: summary?.totalCashIn ?? investors.reduce((sum, inv) => sum + inv.netInvestment, 0),
+  };
 
   // Prepare doughnut chart data (Purchase vs Sales vs Expenses)
   const doughnutData = useMemo(() => {
     return [
-      { name: 'Purchases', value: summary.purchases },
-      { name: 'Sales', value: summary.sales },
-      { name: 'Expenses', value: summary.expenses },
+      { name: 'Purchases', value: summaryValues.purchases },
+      { name: 'Sales', value: summaryValues.sales },
+      { name: 'Expenses', value: summaryValues.expenses },
     ].filter(item => item.value > 0);
   }, [summary]);
 
-  // Prepare pie chart data for purchases by product
   const purchaseByProductData = useMemo(() => {
-    const productMap = new Map<string, number>();
-    filteredTransactions
-      .filter(t => t.type === 'buy' && t.productName)
-      .forEach(t => {
-        const current = productMap.get(t.productName!) || 0;
-        productMap.set(t.productName!, current + t.totalAmount);
-      });
-    
-    return Array.from(productMap.entries()).map(([name, value]) => ({
-      name,
-      value
-    }));
-  }, [filteredTransactions]);
+    return productInsights
+      .filter(p => p.totalBought > 0)
+      .map(p => ({ name: p.productName, value: p.totalBought }))
+      .sort((a, b) => b.value - a.value)
+      .slice(0, 6);
+  }, [productInsights]);
 
-  // Prepare pie chart data for sales by product
   const salesByProductData = useMemo(() => {
-    const productMap = new Map<string, number>();
-    filteredTransactions
-      .filter(t => t.type === 'sell' && t.productName)
-      .forEach(t => {
-        const current = productMap.get(t.productName!) || 0;
-        productMap.set(t.productName!, current + t.totalAmount);
-      });
-    
-    return Array.from(productMap.entries()).map(([name, value]) => ({
-      name,
-      value
-    }));
-  }, [filteredTransactions]);
+    return productInsights
+      .filter(p => p.totalSold > 0)
+      .map(p => ({ name: p.productName, value: p.totalSold }))
+      .sort((a, b) => b.value - a.value)
+      .slice(0, 6);
+  }, [productInsights]);
 
-  // Calculate insights - most/least profitable products
   const insights = useMemo(() => {
-    const productProfits = new Map<string, { profit: number; sales: number; purchases: number }>();
-    
-    filteredTransactions.forEach(t => {
-      if ((t.type === 'buy' || t.type === 'sell') && t.productName) {
-        if (!productProfits.has(t.productName)) {
-          productProfits.set(t.productName, { profit: 0, sales: 0, purchases: 0 });
-        }
-        const data = productProfits.get(t.productName)!;
-        if (t.type === 'buy') {
-          data.purchases += t.totalAmount;
-          data.profit -= t.totalAmount;
-        } else {
-          data.sales += t.totalAmount;
-          data.profit += t.totalAmount;
-        }
-      }
-    });
-
-    const profitArray = Array.from(productProfits.entries()).map(([name, data]) => ({
-      product: name,
-      profit: data.profit
-    }));
-
-    profitArray.sort((a, b) => b.profit - a.profit);
-
-    const mostProfitable = profitArray[0] || { product: 'N/A', profit: 0 };
-    const leastProfitable = profitArray[profitArray.length - 1] || { product: 'N/A', profit: 0 };
-
-    return { mostProfitable, leastProfitable };
-  }, [filteredTransactions]);
+    if (!productInsights.length) {
+      return {
+        mostProfitable: { product: 'N/A', profit: 0 },
+        leastProfitable: { product: 'N/A', profit: 0 },
+      };
+    }
+    const sorted = [...productInsights].sort((a, b) => b.netProfit - a.netProfit);
+    const mostProfitable = sorted[0];
+    const leastProfitable = sorted[sorted.length - 1];
+    return {
+      mostProfitable: { product: mostProfitable.productName, profit: mostProfitable.netProfit },
+      leastProfitable: { product: leastProfitable.productName, profit: leastProfitable.netProfit },
+    };
+  }, [productInsights]);
 
   // Get recent 5 transactions
   const recentTransactions = useMemo(() => {
@@ -313,7 +270,9 @@ export function DashboardPage() {
                 <DollarSign className="w-5 h-5" />
               </div>
             </div>
-            <p className="text-2xl">${summary.totalCashIn.toLocaleString()}</p>
+            <p className="text-2xl">
+              {summaryLoading ? 'Loading…' : `$${summaryValues.totalCashIn.toLocaleString()}`}
+            </p>
             <p className="text-sm text-purple-100 mt-1">Investor Capital</p>
           </div>
 
@@ -325,7 +284,9 @@ export function DashboardPage() {
                 <TrendingDown className="w-5 h-5 text-red-600" />
               </div>
             </div>
-            <p className="text-gray-900 text-2xl">${summary.purchases.toLocaleString()}</p>
+            <p className="text-gray-900 text-2xl">
+              {summaryLoading ? 'Loading…' : `$${summaryValues.purchases.toLocaleString()}`}
+            </p>
             <p className="text-sm text-gray-500 mt-1">{filterLabel}</p>
           </div>
 
@@ -337,7 +298,9 @@ export function DashboardPage() {
                 <TrendingUp className="w-5 h-5 text-green-600" />
               </div>
             </div>
-            <p className="text-gray-900 text-2xl">${summary.sales.toLocaleString()}</p>
+            <p className="text-gray-900 text-2xl">
+              {summaryLoading ? 'Loading…' : `$${summaryValues.sales.toLocaleString()}`}
+            </p>
             <p className="text-sm text-gray-500 mt-1">{filterLabel}</p>
           </div>
 
@@ -349,7 +312,9 @@ export function DashboardPage() {
                 <DollarSign className="w-5 h-5 text-orange-600" />
               </div>
             </div>
-            <p className="text-gray-900 text-2xl">${summary.expenses.toLocaleString()}</p>
+            <p className="text-gray-900 text-2xl">
+              {summaryLoading ? 'Loading…' : `$${summaryValues.expenses.toLocaleString()}`}
+            </p>
             <p className="text-sm text-gray-500 mt-1">{filterLabel}</p>
           </div>
 
@@ -357,16 +322,29 @@ export function DashboardPage() {
           <div className="bg-white rounded-xl shadow-sm p-6">
             <div className="flex items-center justify-between mb-2">
               <p className="text-gray-600">Profit / Loss</p>
-              <div className={`p-2 rounded-lg ${summary.profit >= 0 ? 'bg-green-50' : 'bg-red-50'}`}>
-                <DollarSign className={`w-5 h-5 ${summary.profit >= 0 ? 'text-green-600' : 'text-red-600'}`} />
+              <div className={`p-2 rounded-lg ${summaryValues.profit >= 0 ? 'bg-green-50' : 'bg-red-50'}`}>
+                <DollarSign className={`w-5 h-5 ${summaryValues.profit >= 0 ? 'text-green-600' : 'text-red-600'}`} />
               </div>
             </div>
-            <p className={`text-2xl ${summary.profit >= 0 ? 'text-green-600' : 'text-red-600'}`}>
-              ${Math.abs(summary.profit).toLocaleString()}
+            <p className={`text-2xl ${summaryValues.profit >= 0 ? 'text-green-600' : 'text-red-600'}`}>
+              {summaryLoading ? 'Loading…' : `$${Math.abs(summaryValues.profit).toLocaleString()}`}
             </p>
             <p className="text-sm text-gray-500 mt-1">{filterLabel}</p>
           </div>
         </div>
+
+        {summaryError && (
+          <div className="bg-red-50 border border-red-100 rounded-xl p-4 mb-6 text-red-700 flex items-start gap-3">
+            <DollarSign className="w-5 h-5 mt-0.5" />
+            <div>
+              <p className="font-medium">Unable to load summary.</p>
+              <p className="text-sm">{summaryErrorDetails?.message ?? 'Please try again.'}</p>
+              <button onClick={refetchSummary} className="mt-2 text-indigo-600 hover:text-indigo-700 text-sm">
+                Retry
+              </button>
+            </div>
+          </div>
+        )}
 
         {/* Charts Section */}
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-8">
@@ -403,7 +381,9 @@ export function DashboardPage() {
           {/* Pie Chart - Purchase by Product */}
           <div className="bg-white rounded-xl shadow-sm p-6">
             <h2 className="text-gray-900 mb-4">Purchase by Product</h2>
-            {purchaseByProductData.length > 0 ? (
+            {productLoading ? (
+              <div className="h-[250px] flex items-center justify-center text-gray-500">Loading...</div>
+            ) : purchaseByProductData.length > 0 ? (
               <ResponsiveContainer width="100%" height={250}>
                 <PieChart>
                   <Pie
@@ -431,7 +411,9 @@ export function DashboardPage() {
           {/* Pie Chart - Sales by Product */}
           <div className="bg-white rounded-xl shadow-sm p-6">
             <h2 className="text-gray-900 mb-4">Sales by Product</h2>
-            {salesByProductData.length > 0 ? (
+            {productLoading ? (
+              <div className="h-[250px] flex items-center justify-center text-gray-500">Loading...</div>
+            ) : salesByProductData.length > 0 ? (
               <ResponsiveContainer width="100%" height={250}>
                 <PieChart>
                   <Pie
@@ -523,29 +505,29 @@ export function DashboardPage() {
         </div>
 
         {/* Quick Insights */}
-        <div className="bg-gradient-to-r from-indigo-500 to-purple-600 rounded-xl shadow-sm p-6 text-white">
-          <h2 className="mb-4">Quick Insights</h2>
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <div className="bg-white/10 rounded-lg p-4 backdrop-blur-sm">
-              <p className="text-indigo-100 mb-1">Most Profitable Product {filterLabel}</p>
-              <p className="text-xl">
-                {insights.mostProfitable.product}
-              </p>
-              <p className="text-sm text-indigo-100 mt-1">
-                Profit: ${insights.mostProfitable.profit.toLocaleString()}
-              </p>
-            </div>
-            <div className="bg-white/10 rounded-lg p-4 backdrop-blur-sm">
-              <p className="text-indigo-100 mb-1">Least Profitable Product</p>
-              <p className="text-xl">
-                {insights.leastProfitable.product}
-              </p>
-              <p className="text-sm text-indigo-100 mt-1">
-                {insights.leastProfitable.profit >= 0 ? 'Profit' : 'Loss'}: ${Math.abs(insights.leastProfitable.profit).toLocaleString()}
-              </p>
+          <div className="bg-gradient-to-r from-indigo-500 to-purple-600 rounded-xl shadow-sm p-6 text-white">
+            <h2 className="mb-4">Quick Insights</h2>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div className="bg-white/10 rounded-lg p-4 backdrop-blur-sm">
+                <p className="text-indigo-100 mb-1">Most Profitable Product {filterLabel}</p>
+                <p className="text-xl">
+                  {insights.mostProfitable.product}
+                </p>
+                <p className="text-sm text-indigo-100 mt-1">
+                  Profit: ${insights.mostProfitable.profit.toLocaleString()}
+                </p>
+              </div>
+              <div className="bg-white/10 rounded-lg p-4 backdrop-blur-sm">
+                <p className="text-indigo-100 mb-1">Least Profitable Product</p>
+                <p className="text-xl">
+                  {insights.leastProfitable.product}
+                </p>
+                <p className="text-sm text-indigo-100 mt-1">
+                  {insights.leastProfitable.profit >= 0 ? 'Profit' : 'Loss'}: ${Math.abs(insights.leastProfitable.profit).toLocaleString()}
+                </p>
+              </div>
             </div>
           </div>
-        </div>
       </main>
     </div>
   );

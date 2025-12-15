@@ -1,38 +1,25 @@
-import React, { useState, useMemo } from 'react';
+import React, { useState } from 'react';
 import { useApp } from '../context/AppContext';
-import { ArrowLeft, Search, Filter, ShoppingCart, DollarSign, Receipt } from 'lucide-react';
+import { useTransactions, TransactionTypeFilter } from '../../hooks/useTransactions';
+import { ArrowLeft, Search, Filter, ShoppingCart, DollarSign, Receipt, Loader2, AlertCircle } from 'lucide-react';
 import { format } from 'date-fns';
 
-type TransactionTypeFilter = 'all' | 'buy' | 'sell' | 'expense';
-
 export function TransactionsPage() {
-  const { user, transactions, setCurrentPage } = useApp();
+  const { user, setCurrentPage } = useApp();
   const [searchQuery, setSearchQuery] = useState('');
   const [typeFilter, setTypeFilter] = useState<TransactionTypeFilter>('all');
   const [startDate, setStartDate] = useState('');
   const [endDate, setEndDate] = useState('');
 
-  // Filter transactions
-  const filteredTransactions = useMemo(() => {
-    return transactions.filter(t => {
-      // Search filter
-      const searchTerm = searchQuery.toLowerCase();
-      const matchesSearch = searchQuery === '' || 
-        (t.productName && t.productName.toLowerCase().includes(searchTerm)) ||
-        (t.expenseDescription && t.expenseDescription.toLowerCase().includes(searchTerm)) ||
-        t.personName.toLowerCase().includes(searchTerm);
+  const { data, isLoading, isError, error, refetch } = useTransactions({
+    search: searchQuery || undefined,
+    type: typeFilter,
+    startDate: startDate || undefined,
+    endDate: endDate || undefined,
+  });
 
-      // Type filter
-      const matchesType = typeFilter === 'all' || t.type === typeFilter;
-
-      // Date filter
-      const matchesDate = 
-        (!startDate || t.date >= new Date(startDate)) &&
-        (!endDate || t.date <= new Date(endDate));
-
-      return matchesSearch && matchesType && matchesDate;
-    });
-  }, [transactions, searchQuery, typeFilter, startDate, endDate]);
+  const transactions = data?.items ?? [];
+  const totalTransactions = data?.total ?? 0;
 
   return (
     <div className="min-h-screen bg-gray-50">
@@ -146,19 +133,49 @@ export function TransactionsPage() {
 
         {/* Results Count */}
         <div className="mb-4">
-          <p className="text-gray-600">
-            Showing {filteredTransactions.length} of {transactions.length} transactions
-          </p>
+          {isLoading ? (
+            <div className="flex items-center gap-2 text-gray-500">
+              <Loader2 className="w-4 h-4 animate-spin" />
+              <span>Loading transactions...</span>
+            </div>
+          ) : (
+            <p className="text-gray-600">
+              Showing {transactions.length} of {totalTransactions} transactions
+            </p>
+          )}
         </div>
+
+        {isError && (
+          <div className="bg-red-50 border border-red-100 rounded-xl p-4 mb-4 flex items-start gap-3 text-red-700">
+            <AlertCircle className="w-5 h-5 mt-0.5" />
+            <div>
+              <p className="font-medium">Unable to load transactions.</p>
+              <p className="text-sm">{error?.message ?? 'Please try again.'}</p>
+              <button
+                onClick={() => refetch()}
+                className="mt-2 inline-flex items-center text-indigo-600 hover:text-indigo-700"
+              >
+                Retry
+              </button>
+            </div>
+          </div>
+        )}
 
         {/* Transactions List */}
         <div className="space-y-4">
-          {filteredTransactions.length === 0 ? (
+          {!isLoading && transactions.length === 0 ? (
             <div className="bg-white rounded-xl shadow-sm p-12 text-center">
               <p className="text-gray-500">No transactions found</p>
             </div>
+          ) : null}
+
+          {isLoading ? (
+            <div className="bg-white rounded-xl shadow-sm p-6 flex items-center gap-3 text-gray-500">
+              <Loader2 className="w-5 h-5 animate-spin" />
+              <span>Loading transactions...</span>
+            </div>
           ) : (
-            filteredTransactions.map((transaction) => (
+            transactions.map((transaction) => (
               <div
                 key={transaction.id}
                 className="bg-white rounded-xl shadow-sm p-6 hover:shadow-md transition-shadow"

@@ -74,7 +74,6 @@ interface AppContextType {
   addUser: (user: Omit<User, 'id'>) => void;
   updateUserRole: (userId: string, role: UserRole) => void;
   disableUser: (userId: string) => void;
-  addTransaction: (transaction: Omit<Transaction, 'id' | 'personName'>) => void;
   getAvailableProducts: () => string[];
   addInvestor: (name: string) => void;
   addInvestment: (investorId: string, amount: number, notes?: string) => void;
@@ -425,18 +424,6 @@ export function AppProvider({ children }: { children: ReactNode }) {
     }));
   }, []);
 
-  const addTransaction = useCallback((transaction: Omit<Transaction, 'id' | 'personName'>) => {
-    const newTransaction: Transaction = {
-      ...transaction,
-      id: Date.now().toString(),
-      personName: user?.name || 'Unknown',
-    };
-    setData(prev => ({
-      ...prev,
-      transactions: [newTransaction, ...prev.transactions],
-    }));
-  }, [user]);
-
   const getAvailableProducts = useCallback((): string[] => {
     const products = new Set<string>();
     data.transactions.forEach(t => {
@@ -524,7 +511,6 @@ export function AppProvider({ children }: { children: ReactNode }) {
         updateUserRole,
         disableUser,
         transactions,
-        addTransaction,
         getAvailableProducts,
         investors,
         addInvestor,

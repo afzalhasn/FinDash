@@ -89,16 +89,16 @@ This roadmap breaks work into phases for backend and frontend teams. Complete ea
 ### Phase C – Transactions & Dashboard
 - **Epic: Transaction Data Source Swap**
   - Story: Fetch transactions from API.
-    - Task 1: Implement `useTransactions(filters)` hook calling GET `/transactions`.
-    - Task 2: Update TransactionsPage to consume hook and remove local state.
+    - Task 1 ✅: Implement `useTransactions(filters)` hook calling GET `/transactions`.
+    - Task 2 ✅: Update TransactionsPage to consume hook and remove local state.
   - Story: Add Entry mutation.
-    - Task 1: Wire form submission to POST `/transactions`.
-    - Task 2: On success, invalidate transaction/insight caches; remove local `addTransaction`.
+    - Task 1 ✅: Wire form submission to POST `/transactions`.
+    - Task 2 ✅: On success, invalidate transaction/insight caches; remove local `addTransaction`.
 - **Epic: Dashboard Insights**
   - Story: Replace local computations with API.
-    - Task 1: Fetch `/insights/summary` for cards.
-    - Task 2: Fetch `/insights/products` + `/insights/timeseries` for charts.
-    - Task 3: Remove redundant calculations from frontend.
+    - Task 1 ✅: Fetch `/insights/summary` for cards.
+    - Task 2 ✅: Fetch `/insights/products` + `/insights/timeseries` for charts.
+    - Task 3 ✅: Remove redundant calculations from frontend.
 
 ### Phase D – Investors & Accounts
 - **Epic: Investor Management Integration**

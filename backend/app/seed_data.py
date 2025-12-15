@@ -174,14 +174,14 @@ def seed_investors(session: Session):
     investors = [
         {
             "name": "Michael Chen",
-            "total_invested": Decimal("50000"),
+            "total_invested": Decimal("60000"),
             "total_withdrawn": Decimal("5000"),
-            "net_investment": Decimal("45000"),
+            "net_investment": Decimal("55000"),
             "last_activity_at": datetime.fromisoformat("2024-12-10T00:00:00"),
             "activities": [
                 {
                     "type": InvestmentActivityType.investment,
-                    "amount": Decimal("50000"),
+                    "amount": Decimal("60000"),
                     "occurred_at": datetime.fromisoformat("2024-12-01T00:00:00"),
                     "notes": "Initial investment",
                 },
@@ -195,17 +195,23 @@ def seed_investors(session: Session):
         },
         {
             "name": "Sarah Johnson",
-            "total_invested": Decimal("30000"),
-            "total_withdrawn": Decimal("0"),
+            "total_invested": Decimal("40000"),
+            "total_withdrawn": Decimal("10000"),
             "net_investment": Decimal("30000"),
             "last_activity_at": datetime.fromisoformat("2024-12-05T00:00:00"),
             "activities": [
                 {
                     "type": InvestmentActivityType.investment,
-                    "amount": Decimal("30000"),
+                    "amount": Decimal("40000"),
                     "occurred_at": datetime.fromisoformat("2024-12-05T00:00:00"),
                     "notes": "First investment",
-                }
+                },
+                {
+                    "type": InvestmentActivityType.withdrawal,
+                    "amount": Decimal("10000"),
+                    "occurred_at": datetime.fromisoformat("2024-12-10T00:00:00"),
+                    "notes": "Partial withdrawal",
+                },
             ],
         },
     ]
