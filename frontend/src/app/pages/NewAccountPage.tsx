@@ -10,7 +10,7 @@ export function NewAccountPage() {
   const [newUserEmail, setNewUserEmail] = useState('');
   const [newUserRole, setNewUserRole] = useState<UserRole>('staff');
 
-  const handleAddUser = (e: React.FormEvent) => {
+  const handleAddUser = async (e: React.FormEvent) => {
     e.preventDefault();
     
     // Check if email already exists
@@ -19,27 +19,38 @@ export function NewAccountPage() {
       return;
     }
     
-    addUser({
+    const success = await addUser({
       name: newUserName,
       email: newUserEmail,
       role: newUserRole,
     });
-    
-    toast.success(`User "${newUserName}" created successfully!`);
-    setNewUserName('');
-    setNewUserEmail('');
-    setNewUserRole('staff');
-    setShowForm(false);
+    if (success) {
+      toast.success(`User "${newUserName}" created successfully!`);
+      setNewUserName('');
+      setNewUserEmail('');
+      setNewUserRole('staff');
+      setShowForm(false);
+    } else {
+      toast.error('Failed to create user. Please try again.');
+    }
   };
 
-  const handleRoleChange = (userId: string, newRole: UserRole) => {
-    updateUserRole(userId, newRole);
-    toast.success('User role updated successfully!');
+  const handleRoleChange = async (userId: string, newRole: UserRole) => {
+    const success = await updateUserRole(userId, newRole);
+    if (success) {
+      toast.success('User role updated successfully!');
+    } else {
+      toast.error('Failed to update role. Please try again.');
+    }
   };
 
-  const handleDisableUser = (userId: string, userName: string) => {
-    disableUser(userId);
-    toast.success(`User "${userName}" has been disabled.`);
+  const handleDisableUser = async (userId: string, userName: string) => {
+    const success = await disableUser(userId);
+    if (success) {
+      toast.success(`User "${userName}" has been disabled.`);
+    } else {
+      toast.error('Failed to disable user. Please try again.');
+    }
   };
 
   const getRoleBadgeColor = (role: UserRole) => {

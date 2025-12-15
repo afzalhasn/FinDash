@@ -106,12 +106,12 @@ This roadmap breaks work into phases for backend and frontend teams. Complete ea
     - Task 1 ✅: Replace `investors` state with GET `/investors`.
     - Task 2 ✅: Wire Add Investor form to POST `/investors`.
     - Task 3 ✅: Wire investment/withdrawal forms to POST `/investors/{id}/activities`.
-  - Story: Remove mock investor data from context.
+  - Story: Remove mock investor data from context. ✅
 - **Epic: Account Management Integration**
   - Story: User CRUD UI.
-    - Task 1: Fetch `/users` to populate admin table.
-    - Task 2: Wire new account form to POST `/users`.
-    - Task 3: Wire role/disable actions to PATCH endpoints.
+    - Task 1 ✅: Fetch `/users` to populate admin table.
+    - Task 2 ✅: Wire new account form to POST `/users`.
+    - Task 3 ✅: Wire role/disable actions to PATCH endpoints.
 
 ### Phase E – Cleanup & Polish
 - **Epic: Remove Legacy State**

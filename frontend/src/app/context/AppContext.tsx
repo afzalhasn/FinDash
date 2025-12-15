@@ -72,6 +72,14 @@ interface InvestorActivityPayload {
   notes?: string;
 }
 
+interface UserApiResponse {
+  id: string;
+  name: string;
+  email: string;
+  role: UserRole;
+  disabled?: boolean;
+}
+
 export interface AppDataState {
   users: User[];
   transactions: Transaction[];
@@ -86,9 +94,9 @@ interface AppContextType {
   investors: Investor[];
   login: (email: string, password: string) => Promise<boolean>;
   logout: () => void;
-  addUser: (user: Omit<User, 'id'>) => void;
-  updateUserRole: (userId: string, role: UserRole) => void;
-  disableUser: (userId: string) => void;
+  addUser: (user: Omit<User, 'id'>) => Promise<boolean>;
+  updateUserRole: (userId: string, role: UserRole) => Promise<boolean>;
+  disableUser: (userId: string) => Promise<boolean>;
   getAvailableProducts: () => string[];
   addInvestor: (name: string) => Promise<boolean>;
   addInvestment: (investorId: string, amount: number, notes?: string) => Promise<boolean>;
@@ -102,7 +110,6 @@ const AppContext = createContext<AppContextType | undefined>(undefined);
 
 const STORAGE_KEYS = {
   transactions: 'findash_v2_transactions',
-  investors: 'findash_v2_investors',
   users: 'findash_v2_users',
 };
 
@@ -244,32 +251,6 @@ const initialTransactions: Transaction[] = [
 ];
 
 // Mock initial investors
-const initialInvestors: Investor[] = [
-  {
-    id: '1',
-    name: 'Michael Chen',
-    totalInvested: 50000,
-    totalWithdrawn: 5000,
-    netInvestment: 45000,
-    lastActivityDate: new Date('2024-12-10'),
-    investments: [
-      { id: '1', type: 'investment', amount: 50000, date: new Date('2024-12-01'), notes: 'Initial investment' },
-      { id: '2', type: 'withdrawal', amount: 5000, date: new Date('2024-12-10'), notes: 'Partial withdrawal' },
-    ]
-  },
-  {
-    id: '2',
-    name: 'Sarah Johnson',
-    totalInvested: 30000,
-    totalWithdrawn: 0,
-    netInvestment: 30000,
-    lastActivityDate: new Date('2024-12-05'),
-    investments: [
-      { id: '1', type: 'investment', amount: 30000, date: new Date('2024-12-05'), notes: 'First investment' },
-    ]
-  },
-];
-
 const safeParse = <T,>(key: string, fallback: T): T => {
   if (typeof window === 'undefined') return fallback;
   try {
@@ -289,7 +270,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
   const [data, setData] = useState<AppDataState>(() => ({
     users: USE_API ? [] : initialUsers,
     transactions: USE_API ? [] : initialTransactions,
-    investors: USE_API ? [] : initialInvestors,
+    investors: [],
   }));
   const [currentPage, setCurrentPageState] = useState<AppPage>(DEFAULT_PAGE);
 
@@ -328,7 +309,6 @@ export function AppProvider({ children }: { children: ReactNode }) {
   // Load persisted data from localStorage
   useEffect(() => {
     const savedTransactions = safeParse<Transaction[]>(STORAGE_KEYS.transactions, []);
-    const savedInvestors = safeParse<Investor[]>(STORAGE_KEYS.investors, []);
     const savedUsers = safeParse<User[]>(STORAGE_KEYS.users, []);
 
     if (USE_API) {
@@ -337,16 +317,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
     setData({
       users: savedUsers.length ? savedUsers : initialUsers,
       transactions: savedTransactions.length ? savedTransactions.map((t: any) => ({ ...t, date: new Date(t.date) })) : initialTransactions,
-      investors: savedInvestors.length
-        ? savedInvestors.map((inv: any) => ({
-            ...inv,
-            lastActivityDate: new Date(inv.lastActivityDate),
-            investments: inv.investments.map((i: any) => ({
-              ...i,
-              date: new Date(i.date)
-            }))
-          }))
-        : initialInvestors,
+      investors: [],
     });
   }, []);
 
@@ -354,7 +325,6 @@ export function AppProvider({ children }: { children: ReactNode }) {
   useEffect(() => {
     if (USE_API) return;
     localStorage.setItem(STORAGE_KEYS.transactions, JSON.stringify(data.transactions));
-    localStorage.setItem(STORAGE_KEYS.investors, JSON.stringify(data.investors));
     localStorage.setItem(STORAGE_KEYS.users, JSON.stringify(data.users));
   }, [data]);
 
@@ -397,6 +367,27 @@ export function AppProvider({ children }: { children: ReactNode }) {
       }
     };
     loadInvestors();
+    return () => {
+      cancelled = true;
+    };
+  }, [user]);
+
+  useEffect(() => {
+    if (!USE_API || !user) return;
+    let cancelled = false;
+    const loadUsers = async () => {
+      try {
+        const response = await apiClient.get<UserApiResponse[]>('/api/v1/users');
+        if (cancelled) return;
+        setData(prev => ({
+          ...prev,
+          users: response.map(u => ({ ...u })),
+        }));
+      } catch (error) {
+        console.warn('Failed to load users', error);
+      }
+    };
+    loadUsers();
     return () => {
       cancelled = true;
     };
@@ -446,26 +437,72 @@ export function AppProvider({ children }: { children: ReactNode }) {
     setCurrentPage('login');
   }, [tokens, setCurrentPage]);
 
-  const addUser = useCallback((userData: Omit<User, 'id'>) => {
+  const addUser = useCallback(async (userData: Omit<User, 'id'>) => {
+    if (USE_API) {
+      try {
+        const response = await apiClient.post<UserApiResponse>('/api/v1/users', {
+          ...userData,
+          password: 'password',
+        });
+        setData(prev => ({ ...prev, users: [...prev.users, response] }));
+        return true;
+      } catch (error) {
+        console.error('Failed to create user', error);
+        return false;
+      }
+    }
     const newUser: User = {
       ...userData,
       id: Date.now().toString(),
     };
     setData(prev => ({ ...prev, users: [...prev.users, newUser] }));
+    return true;
   }, []);
 
-  const updateUserRole = useCallback((userId: string, role: UserRole) => {
+  const updateUserRole = useCallback(async (userId: string, role: UserRole) => {
+    if (USE_API) {
+      try {
+        const response = await apiClient.patch<UserApiResponse>(`/api/v1/users/${userId}/role`, {
+          role,
+        });
+        setData(prev => ({
+          ...prev,
+          users: prev.users.map(u => (u.id === response.id ? { ...u, role: response.role, disabled: response.disabled } : u)),
+        }));
+        return true;
+      } catch (error) {
+        console.error('Failed to update user role', error);
+        return false;
+      }
+    }
     setData(prev => ({
       ...prev,
       users: prev.users.map(u => (u.id === userId ? { ...u, role } : u)),
     }));
+    return true;
   }, []);
 
-  const disableUser = useCallback((userId: string) => {
+  const disableUser = useCallback(async (userId: string) => {
+    if (USE_API) {
+      try {
+        const response = await apiClient.patch<UserApiResponse>(`/api/v1/users/${userId}/role`, {
+          disabled: true,
+        });
+        setData(prev => ({
+          ...prev,
+          users: prev.users.map(u => (u.id === response.id ? { ...u, role: response.role, disabled: response.disabled } : u)),
+        }));
+        return true;
+      } catch (error) {
+        console.error('Failed to disable user', error);
+        return false;
+      }
+    }
     setData(prev => ({
       ...prev,
       users: prev.users.map(u => (u.id === userId ? { ...u, disabled: true } : u)),
     }));
+    return true;
   }, []);
 
   const getAvailableProducts = useCallback((): string[] => {
