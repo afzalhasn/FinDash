@@ -57,6 +57,21 @@ export interface InvestmentActivity {
   notes?: string;
 }
 
+interface InvestorApiResponse {
+  id: string;
+  name: string;
+  total_invested: number;
+  total_withdrawn: number;
+  net_investment: number;
+  last_activity_at?: string | null;
+}
+
+interface InvestorActivityPayload {
+  type: 'investment' | 'withdrawal';
+  amount: number;
+  notes?: string;
+}
+
 export interface AppDataState {
   users: User[];
   transactions: Transaction[];
@@ -75,9 +90,9 @@ interface AppContextType {
   updateUserRole: (userId: string, role: UserRole) => void;
   disableUser: (userId: string) => void;
   getAvailableProducts: () => string[];
-  addInvestor: (name: string) => void;
-  addInvestment: (investorId: string, amount: number, notes?: string) => void;
-  addWithdrawal: (investorId: string, amount: number, notes?: string) => void;
+  addInvestor: (name: string) => Promise<boolean>;
+  addInvestment: (investorId: string, amount: number, notes?: string) => Promise<boolean>;
+  addWithdrawal: (investorId: string, amount: number, notes?: string) => Promise<boolean>;
   currentPage: AppPage;
   setCurrentPage: (page: AppPage, options?: { role?: UserRole | null }) => void;
   isAuthorized: (page: AppPage, roleOverride?: UserRole | null) => boolean;
@@ -93,6 +108,16 @@ const STORAGE_KEYS = {
 
 const DEFAULT_PAGE: AppPage = 'login';
 const USE_API = process.env.NEXT_PUBLIC_USE_API === 'true';
+
+const mapInvestorResponse = (inv: InvestorApiResponse): Investor => ({
+  id: inv.id,
+  name: inv.name,
+  totalInvested: Number(inv.total_invested),
+  totalWithdrawn: Number(inv.total_withdrawn),
+  netInvestment: Number(inv.net_investment),
+  lastActivityDate: inv.last_activity_at ? new Date(inv.last_activity_at) : new Date(),
+  investments: [],
+});
 
 const PAGE_ACCESS: Partial<Record<AppPage, UserRole[]>> = {
   'add-entry': ['admin', 'partner'],
@@ -358,6 +383,25 @@ export function AppProvider({ children }: { children: ReactNode }) {
       });
   }, [tokens]);
 
+  useEffect(() => {
+    if (!USE_API || !user) return;
+    let cancelled = false;
+    const loadInvestors = async () => {
+      try {
+        const response = await apiClient.get<InvestorApiResponse[]>('/api/v1/investors');
+        if (cancelled) return;
+        const normalized: Investor[] = response.map(mapInvestorResponse);
+        setData(prev => ({ ...prev, investors: normalized }));
+      } catch (error) {
+        console.warn('Failed to load investors', error);
+      }
+    };
+    loadInvestors();
+    return () => {
+      cancelled = true;
+    };
+  }, [user]);
+
   const login = useCallback(async (email: string, password: string): Promise<boolean> => {
     if (USE_API) {
       try {
@@ -434,7 +478,18 @@ export function AppProvider({ children }: { children: ReactNode }) {
     return Array.from(products).sort();
   }, [data.transactions]);
 
-  const addInvestor = useCallback((name: string) => {
+  const addInvestor = useCallback(async (name: string) => {
+    if (USE_API) {
+      try {
+        const response = await apiClient.post<InvestorApiResponse>('/api/v1/investors', { name });
+        const mapped = mapInvestorResponse(response);
+        setData(prev => ({ ...prev, investors: [...prev.investors, mapped] }));
+        return true;
+      } catch (error) {
+        console.error('Failed to add investor', error);
+        return false;
+      }
+    }
     const newInvestor: Investor = {
       id: Date.now().toString(),
       name,
@@ -445,57 +500,105 @@ export function AppProvider({ children }: { children: ReactNode }) {
       investments: [],
     };
     setData(prev => ({ ...prev, investors: [...prev.investors, newInvestor] }));
+    return true;
   }, []);
 
-  const addInvestment = useCallback((investorId: string, amount: number, notes?: string) => {
+  const applyLocalInvestorActivity = useCallback((investorId: string, payload: InvestorActivityPayload) => {
     setData(prev => ({
       ...prev,
       investors: prev.investors.map(inv => {
-        if (inv.id === investorId) {
-          const newActivity: InvestmentActivity = {
-            id: Date.now().toString(),
-            type: 'investment',
-            amount,
-            date: new Date(),
-            notes,
-          };
+        if (inv.id !== investorId) return inv;
+        const activity: InvestmentActivity = {
+          id: Date.now().toString(),
+          type: payload.type,
+          amount: payload.amount,
+          date: new Date(),
+          notes: payload.notes,
+        };
+        if (payload.type === 'investment') {
           return {
             ...inv,
-            totalInvested: inv.totalInvested + amount,
-            netInvestment: inv.netInvestment + amount,
-            lastActivityDate: new Date(),
-            investments: [...inv.investments, newActivity],
+            totalInvested: inv.totalInvested + payload.amount,
+            netInvestment: inv.netInvestment + payload.amount,
+            lastActivityDate: activity.date,
+            investments: [...inv.investments, activity],
           };
         }
-        return inv;
+        return {
+          ...inv,
+          totalWithdrawn: inv.totalWithdrawn + payload.amount,
+          netInvestment: inv.netInvestment - payload.amount,
+          lastActivityDate: activity.date,
+          investments: [...inv.investments, activity],
+        };
       }),
     }));
   }, []);
 
-  const addWithdrawal = useCallback((investorId: string, amount: number, notes?: string) => {
+  const updateInvestorFromResponse = useCallback((response: InvestorApiResponse) => {
+    const mapped = mapInvestorResponse(response);
     setData(prev => ({
       ...prev,
-      investors: prev.investors.map(inv => {
-        if (inv.id === investorId) {
-          const newActivity: InvestmentActivity = {
-            id: Date.now().toString(),
-            type: 'withdrawal',
-            amount,
-            date: new Date(),
-            notes,
-          };
-          return {
-            ...inv,
-            totalWithdrawn: inv.totalWithdrawn + amount,
-            netInvestment: inv.netInvestment - amount,
-            lastActivityDate: new Date(),
-            investments: [...inv.investments, newActivity],
-          };
-        }
-        return inv;
-      }),
+      investors: prev.investors.map(inv =>
+        inv.id === mapped.id
+          ? {
+              ...mapped,
+              investments: [
+                ...inv.investments,
+                {
+                  id: Date.now().toString(),
+                  type: mapped.netInvestment > inv.netInvestment ? 'investment' : 'withdrawal',
+                  amount: Math.abs(mapped.netInvestment - inv.netInvestment),
+                  date: mapped.lastActivityDate,
+                },
+              ],
+            }
+          : inv
+      ),
     }));
   }, []);
+
+  const addInvestment = useCallback(
+    async (investorId: string, amount: number, notes?: string) => {
+      const payload: InvestorActivityPayload = { type: 'investment', amount, notes };
+      if (USE_API) {
+        try {
+          const response = await apiClient.post<InvestorApiResponse>(`/api/v1/investors/${investorId}/activities`, {
+            ...payload,
+          });
+          updateInvestorFromResponse(response);
+          return true;
+        } catch (error) {
+          console.error('Failed to add investment', error);
+          return false;
+        }
+      }
+      applyLocalInvestorActivity(investorId, payload);
+      return true;
+    },
+    [applyLocalInvestorActivity, updateInvestorFromResponse]
+  );
+
+  const addWithdrawal = useCallback(
+    async (investorId: string, amount: number, notes?: string) => {
+      const payload: InvestorActivityPayload = { type: 'withdrawal', amount, notes };
+      if (USE_API) {
+        try {
+          const response = await apiClient.post<InvestorApiResponse>(`/api/v1/investors/${investorId}/activities`, {
+            ...payload,
+          });
+          updateInvestorFromResponse(response);
+          return true;
+        } catch (error) {
+          console.error('Failed to add withdrawal', error);
+          return false;
+        }
+      }
+      applyLocalInvestorActivity(investorId, payload);
+      return true;
+    },
+    [applyLocalInvestorActivity, updateInvestorFromResponse]
+  );
 
   const { users, transactions, investors } = data;
 

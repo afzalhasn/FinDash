@@ -16,28 +16,34 @@ export function AddInvestorPage() {
 
   const selectedInvestor = investors.find(inv => inv.id === selectedInvestorId);
 
-  const handleAddInvestor = (e: React.FormEvent) => {
+  const handleAddInvestor = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!newInvestorName.trim()) return;
-    
-    addInvestor(newInvestorName);
-    toast.success(`Investor "${newInvestorName}" added successfully!`);
-    setNewInvestorName('');
-    setMode('select');
+    const success = await addInvestor(newInvestorName.trim());
+    if (success) {
+      toast.success(`Investor "${newInvestorName}" added successfully!`);
+      setNewInvestorName('');
+      setMode('select');
+    } else {
+      toast.error('Failed to add investor. Please try again.');
+    }
   };
 
-  const handleAddInvestment = (e: React.FormEvent) => {
+  const handleAddInvestment = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!selectedInvestorId || !amount) return;
-    
-    addInvestment(selectedInvestorId, Number(amount), notes || undefined);
-    toast.success('Investment added successfully!');
-    setAmount('');
-    setNotes('');
-    setMode('select');
+    const success = await addInvestment(selectedInvestorId, Number(amount), notes || undefined);
+    if (success) {
+      toast.success('Investment added successfully!');
+      setAmount('');
+      setNotes('');
+      setMode('select');
+    } else {
+      toast.error('Failed to add investment. Please try again.');
+    }
   };
 
-  const handleAddWithdrawal = (e: React.FormEvent) => {
+  const handleAddWithdrawal = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!selectedInvestorId || !amount) return;
     
@@ -47,11 +53,15 @@ export function AddInvestorPage() {
       return;
     }
     
-    addWithdrawal(selectedInvestorId, amountNum, notes || undefined);
-    toast.success('Withdrawal processed successfully!');
-    setAmount('');
-    setNotes('');
-    setMode('select');
+    const success = await addWithdrawal(selectedInvestorId, amountNum, notes || undefined);
+    if (success) {
+      toast.success('Withdrawal processed successfully!');
+      setAmount('');
+      setNotes('');
+      setMode('select');
+    } else {
+      toast.error('Failed to process withdrawal. Please try again.');
+    }
   };
 
   return (

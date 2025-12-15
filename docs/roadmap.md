@@ -103,9 +103,9 @@ This roadmap breaks work into phases for backend and frontend teams. Complete ea
 ### Phase D – Investors & Accounts
 - **Epic: Investor Management Integration**
   - Story: Fetch investor list/detail from API.
-    - Task 1: Replace `investors` state with GET `/investors`.
-    - Task 2: Wire Add Investor form to POST `/investors`.
-    - Task 3: Wire investment/withdrawal forms to POST `/investors/{id}/activities`.
+    - Task 1 ✅: Replace `investors` state with GET `/investors`.
+    - Task 2 ✅: Wire Add Investor form to POST `/investors`.
+    - Task 3 ✅: Wire investment/withdrawal forms to POST `/investors/{id}/activities`.
   - Story: Remove mock investor data from context.
 - **Epic: Account Management Integration**
   - Story: User CRUD UI.
