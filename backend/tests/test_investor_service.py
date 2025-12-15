@@ -36,10 +36,18 @@ class FakeActivityRepo:
         self.items.append(activity)
 
 
+class FakeSession:
+    def commit(self):
+        self.committed = True
+
+    def rollback(self):
+        self.rolled_back = True
+
+
 def make_service():
     investors = FakeInvestorRepo()
     activities = FakeActivityRepo()
-    service = InvestorService(investors=investors, activities=activities)
+    service = InvestorService(investors=investors, activities=activities, session=FakeSession())
     investor = Investor(
         id=uuid.uuid4(),
         name="Michael",

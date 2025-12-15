@@ -1,21 +1,32 @@
+import logging
 from decimal import Decimal
+from uuid import UUID
 
 from fastapi import HTTPException, status
+from sqlalchemy.orm import Session
 
 from app.models import Investor, InvestmentActivity, InvestmentActivityType
 from app.repositories import InvestorRepository, InvestmentActivityRepository
 
+logger = logging.getLogger(__name__)
+
 
 class InvestorService:
-    def __init__(self, investors: InvestorRepository, activities: InvestmentActivityRepository):
+    def __init__(self, investors: InvestorRepository, activities: InvestmentActivityRepository, session: Session):
         self.investors = investors
         self.activities = activities
+        self.session = session
+
+    def get_investor(self, investor_id: UUID) -> Investor | None:
+        return self.investors.get(investor_id)
 
     def create_investor(self, investor: Investor) -> Investor:
         existing = self.investors.find_by_name(investor.name)
         if existing:
             raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Investor already exists")
-        return self.investors.add(investor)
+        self.investors.add(investor)
+        logger.info("Investor created name=%s", investor.name)
+        return investor
 
     def list_investors(self) -> list[Investor]:
         return self.investors.list()
@@ -34,4 +45,10 @@ class InvestorService:
 
         self.activities.add(activity)
         self.investors.flush()
+        try:
+            self.session.commit()
+        except Exception:
+            self.session.rollback()
+            raise
+        logger.info("Investor activity recorded investor_id=%s type=%s", investor.id, activity.type)
         return investor

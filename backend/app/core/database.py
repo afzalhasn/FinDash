@@ -1,7 +1,7 @@
 from contextlib import contextmanager
 from typing import Generator
 
-from sqlalchemy import create_engine
+from sqlalchemy import create_engine, text
 from sqlalchemy.orm import Session, sessionmaker
 
 from .config import Settings, get_settings
@@ -42,3 +42,11 @@ def get_db_session(settings: Settings | None = None) -> Generator[Session, None,
         raise
     finally:
         session.close()
+
+
+def check_database(settings: Settings | None = None) -> bool:
+    """Simple readiness check."""
+    engine = get_engine(settings)
+    with engine.connect() as conn:
+        conn.execute(text("SELECT 1"))
+    return True

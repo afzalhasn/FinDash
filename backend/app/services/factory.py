@@ -31,6 +31,7 @@ class ServiceFactory:
         return InvestorService(
             investors=InvestorRepository(self.session),
             activities=InvestmentActivityRepository(self.session),
+            session=self.session,
         )
 
     def insight_service(self) -> InsightService:

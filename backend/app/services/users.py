@@ -1,6 +1,7 @@
 import uuid
 
 import json
+import logging
 import uuid
 
 from fastapi import HTTPException, status
@@ -8,6 +9,8 @@ from fastapi import HTTPException, status
 from app.core.security import create_password_hash
 from app.models import User, UserRole, AuditLog
 from app.repositories import UserRepository, AuditLogRepository
+
+logger = logging.getLogger(__name__)
 
 
 class UserService:
@@ -20,6 +23,7 @@ class UserService:
 
     def create_user(self, *, name: str, email: str, role: UserRole, password: str) -> User:
         if self.users.find_by_email(email):
+            logger.warning("Attempt to create user with existing email=%s", email)
             raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Email already exists")
 
         user = User(
@@ -30,6 +34,7 @@ class UserService:
         )
         self.users.add(user)
         self.users.flush()
+        logger.info("User created id=%s", user.id)
         self._log_action(user.id, "create", {"email": email, "role": role})
         return user
 
@@ -40,11 +45,13 @@ class UserService:
 
         if email and email != user.email:
             if self.users.find_by_email(email):
+                logger.warning("Attempt to update user to existing email=%s", email)
                 raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Email already exists")
             user.email = email
         if name:
             user.name = name
         self.users.flush()
+        logger.info("User updated id=%s", user.id)
         self._log_action(user.id, "update", {"name": user.name, "email": user.email})
         return user
 
@@ -68,6 +75,7 @@ class UserService:
         self.users.flush()
         if changes:
             self._log_action(user.id, "role_update", changes)
+            logger.info("User role/status updated id=%s changes=%s", user.id, changes)
         return user
 
     def _log_action(self, entity_id: uuid.UUID, action: str, payload: dict):

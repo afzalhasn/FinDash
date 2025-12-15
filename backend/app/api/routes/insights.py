@@ -32,7 +32,7 @@ def product_insights(
 
 @router.get("/timeseries", response_model=list[TimeSeriesPoint])
 def timeseries(
-    interval: str = Query(default="day", regex="^(day|week|month)$"),
+    interval: str = Query(default="day", pattern="^(day|week|month)$"),
     start: Optional[datetime] = Query(default=None),
     end: Optional[datetime] = Query(default=None),
     service: InsightService = Depends(get_insight_service),

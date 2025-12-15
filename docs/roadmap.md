@@ -56,13 +56,13 @@ This roadmap breaks work into phases for backend and frontend teams. Complete ea
 ### Phase 5 – Investor Management & Finalization
 - **Epic: Investor Services**
   - Story: Investor CRUD and activity logging.
-    - Task 1: Implement `/investors` list/create endpoints.
-    - Task 2: Implement `/investors/{id}` detail + `/activities` endpoints with balance checks.
-    - Task 3: Ensure transactions are atomic, add tests.
+    - Task 1 ✅: Implement `/investors` list/create endpoints.
+    - Task 2 ✅: Implement `/investors/{id}` detail + `/activities` endpoints with balance checks.
+    - Task 3 ✅: Ensure transactions are atomic, add tests.
 - **Epic: Observability & Hardening**
   - Story: Add health/metrics endpoints and structured logging.
-    - Task 1: `/health/live` and `/health/ready`.
-    - Task 2: Configure logging format and correlation IDs.
+    - Task 1 ✅: `/health/live` and `/health/ready`.
+    - Task 2 ✅: Configure logging format and correlation IDs.
     - Task 3: Add CI jobs (lint, tests, migrations) and finalize Docker images.
 
 ---

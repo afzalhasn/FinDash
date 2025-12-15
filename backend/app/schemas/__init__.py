@@ -2,6 +2,7 @@ from .auth import TokenResponse, LoginRequest, RefreshRequest, LogoutRequest, Us
 from .users import UserCreate, UserUpdate, UserRoleUpdate
 from .transactions import TransactionCreate, TransactionOut
 from .insights import InsightSummary, ProductInsight, TimeSeriesPoint
+from .investors import InvestorCreate, InvestorOut, InvestmentActivityCreate
 
 __all__ = [
     "TokenResponse",
@@ -17,4 +18,7 @@ __all__ = [
     "InsightSummary",
     "ProductInsight",
     "TimeSeriesPoint",
+    "InvestorCreate",
+    "InvestorOut",
+    "InvestmentActivityCreate",
 ]
