@@ -63,7 +63,7 @@ This roadmap breaks work into phases for backend and frontend teams. Complete ea
   - Story: Add health/metrics endpoints and structured logging.
     - Task 1 ✅: `/health/live` and `/health/ready`.
     - Task 2 ✅: Configure logging format and correlation IDs.
-    - Task 3: Add CI jobs (lint, tests, migrations) and finalize Docker images.
+    - Task 3 ✅: Add CI jobs (lint, tests, migrations) and finalize Docker images.
 
 ---
 
