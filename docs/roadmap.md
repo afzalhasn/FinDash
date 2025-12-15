@@ -46,11 +46,11 @@ This roadmap breaks work into phases for backend and frontend teams. Complete ea
     - Task 3 ✅: Add PATCH/DELETE endpoints with validation (sell requires stock).
   - Story: Product availability helper.
     - Task 1 ✅: Implement `/products/available` endpoint.
-    - Task 2: Cache results when dataset grows (optional).
+    - Task 2 ❌: Cache results when dataset grows (optional) — skipped for now.
 - **Epic: Insights Services**
   - Story: Dashboard summaries.
-    - Task 1: Build aggregation queries for purchases, sales, expenses, profit, investor cash.
-    - Task 2: Implement `/insights/summary`, `/insights/products`, `/insights/timeseries`.
+    - Task 1 ✅: Build aggregation queries for purchases, sales, expenses, profit, investor cash.
+    - Task 2 ✅: Implement `/insights/summary`, `/insights/products`, `/insights/timeseries`.
     - Task 3: Add integration tests using seeded data.
 
 ### Phase 5 – Investor Management & Finalization

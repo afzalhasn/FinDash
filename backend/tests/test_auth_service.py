@@ -1,7 +1,6 @@
 import uuid
 
 import pytest
-import fastapi
 from fastapi import HTTPException, status
 
 from app.core.config import Settings
