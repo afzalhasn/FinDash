@@ -3,6 +3,7 @@ from .transactions import TransactionService
 from .investors import InvestorService
 from .insights import InsightService
 from .users import UserService
+from .maintenance import MaintenanceService
 from .factory import ServiceFactory
 
 __all__ = [
@@ -11,5 +12,6 @@ __all__ = [
     "InvestorService",
     "InsightService",
     "UserService",
+    "MaintenanceService",
     "ServiceFactory",
 ]

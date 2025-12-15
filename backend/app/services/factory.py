@@ -13,6 +13,7 @@ from .transactions import TransactionService
 from .investors import InvestorService
 from .insights import InsightService
 from .users import UserService
+from .maintenance import MaintenanceService
 
 
 class ServiceFactory:
@@ -40,3 +41,6 @@ class ServiceFactory:
             users=UserRepository(self.session),
             audit_logs=AuditLogRepository(self.session),
         )
+
+    def maintenance_service(self) -> MaintenanceService:
+        return MaintenanceService(session=self.session, settings=self.settings)

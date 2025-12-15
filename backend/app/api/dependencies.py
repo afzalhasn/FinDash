@@ -16,6 +16,7 @@ from app.services import (
     InvestorService,
     InsightService,
     UserService,
+    MaintenanceService,
 )
 
 oauth2_scheme = OAuth2PasswordBearer(tokenUrl="/api/v1/auth/login")
@@ -57,6 +58,10 @@ def get_insight_service(factory: ServiceFactory = Depends(get_service_factory)) 
 
 def get_user_service(factory: ServiceFactory = Depends(get_service_factory)) -> UserService:
     return factory.user_service()
+
+
+def get_maintenance_service(factory: ServiceFactory = Depends(get_service_factory)) -> MaintenanceService:
+    return factory.maintenance_service()
 
 def get_current_user(
     token: str = Depends(oauth2_scheme),
