@@ -76,15 +76,15 @@ This roadmap breaks work into phases for backend and frontend teams. Complete ea
     - Task 2 ✅: Introduce React Query/SWR setup for data fetching and shared error handling.
     - Task 3 ✅: Document API contracts/error states with backend (`docs/api-design.md` alignment).
   - Story: Context cleanup preparation.
-    - Task 1: Isolate UI-only state vs. data state inside `AppContext`.
-    - Task 2: Add feature flags/env vars to switch between mock and API data and set `NEXT_PUBLIC_API_BASE_URL`.
+    - Task 1 ✅: Isolate UI-only state vs. data state inside `AppContext`.
+    - Task 2 ✅: Add feature flags/env vars to switch between mock and API data and set `NEXT_PUBLIC_API_BASE_URL`.
 
 ### Phase B – Authentication Integration
 - **Epic: Auth Flow Migration**
   - Story: Wire login/logout to backend.
-    - Task 1: Replace `login()` to call `/auth/login`, store user profile from API.
-    - Task 2: Decide token storage strategy (HTTP-only cookie vs memory) and handle refresh & logout (`/auth/logout`) in context/middleware.
-    - Task 3: Update protected navigation logic to use backend role info.
+    - Task 1 ✅: Replace `login()` to call `/auth/login`, store user profile from API.
+    - Task 2 ✅: Decide token storage strategy (HTTP-only cookie vs memory) and handle refresh & logout (`/auth/logout`) in context/middleware.
+    - Task 3 ✅: Centralize page access rules inside `AppContext` and gate navigation using backend-provided roles.
 
 ### Phase C – Transactions & Dashboard
 - **Epic: Transaction Data Source Swap**

@@ -1,5 +1,4 @@
 "use client";
-"use client";
 
 import React, {
   createContext,
@@ -9,6 +8,8 @@ import React, {
   useEffect,
   useCallback,
 } from 'react';
+import { apiClient } from '../../lib/api';
+import { saveAuthTokens, loadAuthTokens, clearAuthTokens, AuthTokens } from '../../lib/auth';
 
 export type UserRole = 'admin' | 'partner' | 'staff';
 export type QuantityType = 'kg' | 'dozen' | 'pack' | 'unit' | 'custom';
@@ -56,23 +57,31 @@ export interface InvestmentActivity {
   notes?: string;
 }
 
+export interface AppDataState {
+  users: User[];
+  transactions: Transaction[];
+  investors: Investor[];
+}
+
 interface AppContextType {
   user: User | null;
+  data: AppDataState;
   users: User[];
-  login: (email: string, password: string) => boolean;
+  transactions: Transaction[];
+  investors: Investor[];
+  login: (email: string, password: string) => Promise<boolean>;
   logout: () => void;
   addUser: (user: Omit<User, 'id'>) => void;
   updateUserRole: (userId: string, role: UserRole) => void;
   disableUser: (userId: string) => void;
-  transactions: Transaction[];
   addTransaction: (transaction: Omit<Transaction, 'id' | 'personName'>) => void;
   getAvailableProducts: () => string[];
-  investors: Investor[];
   addInvestor: (name: string) => void;
   addInvestment: (investorId: string, amount: number, notes?: string) => void;
   addWithdrawal: (investorId: string, amount: number, notes?: string) => void;
   currentPage: AppPage;
-  setCurrentPage: (page: AppPage) => void;
+  setCurrentPage: (page: AppPage, options?: { role?: UserRole | null }) => void;
+  isAuthorized: (page: AppPage, roleOverride?: UserRole | null) => boolean;
 }
 
 const AppContext = createContext<AppContextType | undefined>(undefined);
@@ -84,6 +93,15 @@ const STORAGE_KEYS = {
 };
 
 const DEFAULT_PAGE: AppPage = 'login';
+const USE_API = process.env.NEXT_PUBLIC_USE_API === 'true';
+
+const PAGE_ACCESS: Partial<Record<AppPage, UserRole[]>> = {
+  'add-entry': ['admin', 'partner'],
+  'add-investor': ['admin'],
+  'new-account': ['admin'],
+};
+
+const PUBLIC_PAGES: AppPage[] = ['login'];
 
 // Mock users with 3 roles
 const initialUsers: User[] = [
@@ -240,12 +258,48 @@ const safeParse = <T,>(key: string, fallback: T): T => {
   }
 };
 
+
 export function AppProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<User | null>(null);
-  const [users, setUsers] = useState<User[]>(initialUsers);
-  const [transactions, setTransactions] = useState<Transaction[]>(initialTransactions);
-  const [investors, setInvestors] = useState<Investor[]>(initialInvestors);
-  const [currentPage, setCurrentPage] = useState<AppPage>(DEFAULT_PAGE);
+  const [tokens, setTokens] = useState<AuthTokens | null>(() => (USE_API ? loadAuthTokens() : null));
+  const [data, setData] = useState<AppDataState>(() => ({
+    users: USE_API ? [] : initialUsers,
+    transactions: USE_API ? [] : initialTransactions,
+    investors: USE_API ? [] : initialInvestors,
+  }));
+  const [currentPage, setCurrentPageState] = useState<AppPage>(DEFAULT_PAGE);
+
+  const isAuthorized = useCallback(
+    (page: AppPage, roleOverride?: UserRole | null) => {
+      if (PUBLIC_PAGES.includes(page)) {
+        return true;
+      }
+      const role = roleOverride ?? user?.role ?? null;
+      if (!role) {
+        return false;
+      }
+      const allowedRoles = PAGE_ACCESS[page];
+      if (!allowedRoles) {
+        return true;
+      }
+      return allowedRoles.includes(role);
+    },
+    [user?.role]
+  );
+
+  const setCurrentPage = useCallback(
+    (nextPage: AppPage, options?: { role?: UserRole | null }) => {
+      const roleOverride = options?.role ?? null;
+      const roleToCheck = roleOverride ?? user?.role ?? null;
+      if (isAuthorized(nextPage, roleToCheck)) {
+        setCurrentPageState(nextPage);
+        return;
+      }
+      const fallback = PUBLIC_PAGES.includes(nextPage) ? nextPage : roleToCheck ? 'dashboard' : 'login';
+      setCurrentPageState(fallback);
+    },
+    [isAuthorized, user]
+  );
 
   // Load persisted data from localStorage
   useEffect(() => {
@@ -253,74 +307,122 @@ export function AppProvider({ children }: { children: ReactNode }) {
     const savedInvestors = safeParse<Investor[]>(STORAGE_KEYS.investors, []);
     const savedUsers = safeParse<User[]>(STORAGE_KEYS.users, []);
 
-    if (savedTransactions.length) {
-      setTransactions(savedTransactions.map((t: any) => ({
-        ...t,
-        date: new Date(t.date)
-      })));
+    if (USE_API) {
+      return;
     }
-
-    if (savedInvestors.length) {
-      setInvestors(savedInvestors.map((inv: any) => ({
-        ...inv,
-        lastActivityDate: new Date(inv.lastActivityDate),
-        investments: inv.investments.map((i: any) => ({
-          ...i,
-          date: new Date(i.date)
-        }))
-      })));
-    }
-
-    if (savedUsers.length) {
-      setUsers(savedUsers);
-    }
+    setData({
+      users: savedUsers.length ? savedUsers : initialUsers,
+      transactions: savedTransactions.length ? savedTransactions.map((t: any) => ({ ...t, date: new Date(t.date) })) : initialTransactions,
+      investors: savedInvestors.length
+        ? savedInvestors.map((inv: any) => ({
+            ...inv,
+            lastActivityDate: new Date(inv.lastActivityDate),
+            investments: inv.investments.map((i: any) => ({
+              ...i,
+              date: new Date(i.date)
+            }))
+          }))
+        : initialInvestors,
+    });
   }, []);
 
   // Save data to localStorage
   useEffect(() => {
-    localStorage.setItem(STORAGE_KEYS.transactions, JSON.stringify(transactions));
-  }, [transactions]);
+    if (USE_API) return;
+    localStorage.setItem(STORAGE_KEYS.transactions, JSON.stringify(data.transactions));
+    localStorage.setItem(STORAGE_KEYS.investors, JSON.stringify(data.investors));
+    localStorage.setItem(STORAGE_KEYS.users, JSON.stringify(data.users));
+  }, [data]);
 
   useEffect(() => {
-    localStorage.setItem(STORAGE_KEYS.investors, JSON.stringify(investors));
-  }, [investors]);
+    if (!user && currentPage !== 'login') {
+      setCurrentPage('login');
+      return;
+    }
+    if (user && !isAuthorized(currentPage, user.role)) {
+      setCurrentPage('dashboard');
+    }
+  }, [user, currentPage, isAuthorized, setCurrentPage]);
 
   useEffect(() => {
-    localStorage.setItem(STORAGE_KEYS.users, JSON.stringify(users));
-  }, [users]);
+    if (!USE_API || tokens || !loadAuthTokens()) return;
+    const stored = loadAuthTokens();
+    if (!stored) return;
+    setTokens(stored);
+    apiClient
+      .get<User>('/api/v1/auth/me')
+      .then(setUser)
+      .catch(() => {
+        clearAuthTokens();
+        setTokens(null);
+        setUser(null);
+      });
+  }, [tokens]);
 
-  const login = useCallback((email: string, password: string): boolean => {
-    const foundUser = users.find(u => u.email === email && !u.disabled);
+  const login = useCallback(async (email: string, password: string): Promise<boolean> => {
+    if (USE_API) {
+      try {
+        const response = await apiClient.post<{ accessToken: string; refreshToken: string; expiresIn: number; user: User }>(
+          '/api/v1/auth/login',
+          { email, password }
+        );
+        const nextTokens: AuthTokens = {
+          accessToken: response.accessToken,
+          refreshToken: response.refreshToken,
+          expiresAt: Date.now() + response.expiresIn * 1000,
+        };
+        saveAuthTokens(nextTokens);
+        setTokens(nextTokens);
+        setUser(response.user);
+        setCurrentPage('dashboard', { role: response.user.role });
+        return true;
+      } catch (err) {
+        console.error('Login failed', err);
+        return false;
+      }
+    }
+    const foundUser = data.users.find(u => u.email === email && !u.disabled);
     if (!foundUser || password !== 'password') return false;
 
     setUser(foundUser);
-    setCurrentPage('dashboard');
+    setCurrentPage('dashboard', { role: foundUser.role });
     return true;
-  }, [users]);
+  }, [data.users, setCurrentPage]);
 
-  const logout = useCallback(() => {
+  const logout = useCallback(async () => {
+    if (USE_API) {
+      try {
+        await apiClient.post('/api/v1/auth/logout', { refreshToken: tokens?.refreshToken });
+      } catch (err) {
+        console.warn('Logout API call failed', err);
+      }
+      clearAuthTokens();
+      setTokens(null);
+    }
     setUser(null);
     setCurrentPage('login');
-  }, []);
+  }, [tokens, setCurrentPage]);
 
   const addUser = useCallback((userData: Omit<User, 'id'>) => {
     const newUser: User = {
       ...userData,
       id: Date.now().toString(),
     };
-    setUsers(prev => [...prev, newUser]);
+    setData(prev => ({ ...prev, users: [...prev.users, newUser] }));
   }, []);
 
   const updateUserRole = useCallback((userId: string, role: UserRole) => {
-    setUsers(prev => prev.map(u => 
-      u.id === userId ? { ...u, role } : u
-    ));
+    setData(prev => ({
+      ...prev,
+      users: prev.users.map(u => (u.id === userId ? { ...u, role } : u)),
+    }));
   }, []);
 
   const disableUser = useCallback((userId: string) => {
-    setUsers(prev => prev.map(u => 
-      u.id === userId ? { ...u, disabled: true } : u
-    ));
+    setData(prev => ({
+      ...prev,
+      users: prev.users.map(u => (u.id === userId ? { ...u, disabled: true } : u)),
+    }));
   }, []);
 
   const addTransaction = useCallback((transaction: Omit<Transaction, 'id' | 'personName'>) => {
@@ -329,18 +431,21 @@ export function AppProvider({ children }: { children: ReactNode }) {
       id: Date.now().toString(),
       personName: user?.name || 'Unknown',
     };
-    setTransactions(prev => [newTransaction, ...prev]);
+    setData(prev => ({
+      ...prev,
+      transactions: [newTransaction, ...prev.transactions],
+    }));
   }, [user]);
 
   const getAvailableProducts = useCallback((): string[] => {
     const products = new Set<string>();
-    transactions.forEach(t => {
+    data.transactions.forEach(t => {
       if (t.type === 'buy' && t.productName) {
         products.add(t.productName);
       }
     });
     return Array.from(products).sort();
-  }, [transactions]);
+  }, [data.transactions]);
 
   const addInvestor = useCallback((name: string) => {
     const newInvestor: Investor = {
@@ -352,57 +457,66 @@ export function AppProvider({ children }: { children: ReactNode }) {
       lastActivityDate: new Date(),
       investments: [],
     };
-    setInvestors(prev => [...prev, newInvestor]);
+    setData(prev => ({ ...prev, investors: [...prev.investors, newInvestor] }));
   }, []);
 
   const addInvestment = useCallback((investorId: string, amount: number, notes?: string) => {
-    setInvestors(prev => prev.map(inv => {
-      if (inv.id === investorId) {
-        const newActivity: InvestmentActivity = {
-          id: Date.now().toString(),
-          type: 'investment',
-          amount,
-          date: new Date(),
-          notes,
-        };
-        return {
-          ...inv,
-          totalInvested: inv.totalInvested + amount,
-          netInvestment: inv.netInvestment + amount,
-          lastActivityDate: new Date(),
-          investments: [...inv.investments, newActivity],
-        };
-      }
-      return inv;
+    setData(prev => ({
+      ...prev,
+      investors: prev.investors.map(inv => {
+        if (inv.id === investorId) {
+          const newActivity: InvestmentActivity = {
+            id: Date.now().toString(),
+            type: 'investment',
+            amount,
+            date: new Date(),
+            notes,
+          };
+          return {
+            ...inv,
+            totalInvested: inv.totalInvested + amount,
+            netInvestment: inv.netInvestment + amount,
+            lastActivityDate: new Date(),
+            investments: [...inv.investments, newActivity],
+          };
+        }
+        return inv;
+      }),
     }));
   }, []);
 
   const addWithdrawal = useCallback((investorId: string, amount: number, notes?: string) => {
-    setInvestors(prev => prev.map(inv => {
-      if (inv.id === investorId) {
-        const newActivity: InvestmentActivity = {
-          id: Date.now().toString(),
-          type: 'withdrawal',
-          amount,
-          date: new Date(),
-          notes,
-        };
-        return {
-          ...inv,
-          totalWithdrawn: inv.totalWithdrawn + amount,
-          netInvestment: inv.netInvestment - amount,
-          lastActivityDate: new Date(),
-          investments: [...inv.investments, newActivity],
-        };
-      }
-      return inv;
+    setData(prev => ({
+      ...prev,
+      investors: prev.investors.map(inv => {
+        if (inv.id === investorId) {
+          const newActivity: InvestmentActivity = {
+            id: Date.now().toString(),
+            type: 'withdrawal',
+            amount,
+            date: new Date(),
+            notes,
+          };
+          return {
+            ...inv,
+            totalWithdrawn: inv.totalWithdrawn + amount,
+            netInvestment: inv.netInvestment - amount,
+            lastActivityDate: new Date(),
+            investments: [...inv.investments, newActivity],
+          };
+        }
+        return inv;
+      }),
     }));
   }, []);
+
+  const { users, transactions, investors } = data;
 
   return (
     <AppContext.Provider
       value={{
         user,
+        data,
         users,
         login,
         logout,
@@ -418,6 +532,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
         addWithdrawal,
         currentPage,
         setCurrentPage,
+        isAuthorized,
       }}
     >
       {children}

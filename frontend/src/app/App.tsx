@@ -1,5 +1,5 @@
 "use client";
-import { AppProvider, useApp, AppPage, UserRole } from './context/AppContext';
+import { AppProvider, useApp, AppPage } from './context/AppContext';
 import { QueryClientProvider } from '@tanstack/react-query';
 import { queryClient } from '../lib/react-query';
 import { LoginPage } from './pages/LoginPage';
@@ -21,20 +21,8 @@ const pageComponents: Record<AppPage, JSX.Element> = {
   'new-account': <NewAccountPage />,
 };
 
-const PAGE_ACCESS: Partial<Record<AppPage, UserRole[]>> = {
-  'add-entry': ['admin', 'partner'],
-  'add-investor': ['admin'],
-  'new-account': ['admin'],
-};
-
-function canAccess(page: AppPage, role?: UserRole): boolean {
-  const allowedRoles = PAGE_ACCESS[page];
-  if (!allowedRoles) return true;
-  return role ? allowedRoles.includes(role) : false;
-}
-
 function AppRouter() {
-  const { currentPage, user } = useApp();
+  const { currentPage, user, isAuthorized } = useApp();
 
   // Redirect unauthenticated users to login
   if (!user) {
@@ -42,7 +30,7 @@ function AppRouter() {
   }
 
   // Authenticated but accessing forbidden page
-  if (!canAccess(currentPage, user.role)) {
+  if (!isAuthorized(currentPage)) {
     return pageComponents.dashboard;
   }
 

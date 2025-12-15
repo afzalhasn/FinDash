@@ -1,4 +1,5 @@
 import type { RequestInit } from 'next/dist/server/web/spec-extension/request';
+import { getStoredAccessToken } from './auth';
 
 type HttpMethod = 'GET' | 'POST' | 'PUT' | 'PATCH' | 'DELETE';
 
@@ -30,7 +31,7 @@ export class ApiClient {
 
   constructor(options: ApiClientOptions = {}) {
     this.baseUrl = options.baseUrl || process.env.NEXT_PUBLIC_API_BASE_URL || 'http://localhost:8000';
-    this.getToken = options.getToken;
+    this.getToken = options.getToken || getStoredAccessToken;
   }
 
   private async request<T>(path: string, method: HttpMethod, body?: unknown, init?: RequestInit): Promise<T> {

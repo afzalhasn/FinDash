@@ -8,11 +8,11 @@ export function LoginPage() {
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError('');
     
-    const success = login(email, password);
+    const success = await login(email, password);
     if (!success) {
       setError('Invalid credentials. Please try again.');
     }
