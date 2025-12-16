@@ -24,7 +24,14 @@ class InvestorService:
         existing = self.investors.find_by_name(investor.name)
         if existing:
             raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Investor already exists")
+        if investor.total_invested is None:
+            investor.total_invested = Decimal("0")
+        if investor.total_withdrawn is None:
+            investor.total_withdrawn = Decimal("0")
+        if investor.net_investment is None:
+            investor.net_investment = Decimal("0")
         self.investors.add(investor)
+        self.investors.flush()
         logger.info("Investor created name=%s", investor.name)
         return investor
 
