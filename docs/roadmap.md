@@ -116,8 +116,8 @@ This roadmap breaks work into phases for backend and frontend teams. Complete ea
 ### Phase E – Cleanup & Polish
 - **Epic: Remove Legacy State**
   - Story: Delete mock data & localStorage persistence.
-    - Task 1: Remove initial transaction/investor/user arrays from `AppContext`.
-    - Task 2: Delete `localStorage` hydration/effects, relying on API queries.
+    - Task 1 ✅: Remove initial transaction/investor/user arrays from `AppContext`.
+    - Task 2 ✅: Delete `localStorage` hydration/effects, relying on API queries.
   - Story: UX Enhancements.
     - Task 1: Show loading/error states from React Query.
     - Task 2: Surface backend validation errors via toasts/forms.

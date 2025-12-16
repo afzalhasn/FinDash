@@ -108,11 +108,6 @@ interface AppContextType {
 
 const AppContext = createContext<AppContextType | undefined>(undefined);
 
-const STORAGE_KEYS = {
-  transactions: 'findash_v2_transactions',
-  users: 'findash_v2_users',
-};
-
 const DEFAULT_PAGE: AppPage = 'login';
 const USE_API = process.env.NEXT_PUBLIC_USE_API === 'true';
 
@@ -134,142 +129,13 @@ const PAGE_ACCESS: Partial<Record<AppPage, UserRole[]>> = {
 
 const PUBLIC_PAGES: AppPage[] = ['login'];
 
-// Mock users with 3 roles
-const initialUsers: User[] = [
-  { id: '1', email: 'admin@findash.com', name: 'Admin User', role: 'admin' },
-  { id: '2', email: 'partner@findash.com', name: 'John Partner', role: 'partner' },
-  { id: '3', email: 'staff@findash.com', name: 'Jane Staff', role: 'staff' },
-];
-
-// Mock initial transactions with expenses
-const initialTransactions: Transaction[] = [
-  {
-    id: '1',
-    type: 'buy',
-    productName: 'Laptop',
-    quantity: 5,
-    quantityType: 'unit',
-    pricePerUnit: 800,
-    totalAmount: 4000,
-    personName: 'John Partner',
-    date: new Date('2024-12-09'),
-    notes: 'Bulk purchase'
-  },
-  {
-    id: '2',
-    type: 'sell',
-    productName: 'Laptop',
-    quantity: 3,
-    quantityType: 'unit',
-    pricePerUnit: 1200,
-    totalAmount: 3600,
-    personName: 'Jane Staff',
-    date: new Date('2024-12-10'),
-  },
-  {
-    id: '3',
-    type: 'expense',
-    expenseCategory: 'rent',
-    expenseDescription: 'Office rent for December',
-    totalAmount: 1500,
-    personName: 'Admin User',
-    date: new Date('2024-12-01'),
-  },
-  {
-    id: '4',
-    type: 'buy',
-    productName: 'Mouse',
-    quantity: 20,
-    quantityType: 'unit',
-    pricePerUnit: 15,
-    totalAmount: 300,
-    personName: 'John Partner',
-    date: new Date('2024-12-11'),
-  },
-  {
-    id: '5',
-    type: 'sell',
-    productName: 'Mouse',
-    quantity: 15,
-    quantityType: 'unit',
-    pricePerUnit: 25,
-    totalAmount: 375,
-    personName: 'Jane Staff',
-    date: new Date('2024-12-12'),
-  },
-  {
-    id: '6',
-    type: 'expense',
-    expenseCategory: 'transport',
-    expenseDescription: 'Delivery charges',
-    totalAmount: 200,
-    personName: 'John Partner',
-    date: new Date('2024-12-12'),
-  },
-  {
-    id: '7',
-    type: 'buy',
-    productName: 'Keyboard',
-    quantity: 10,
-    quantityType: 'unit',
-    pricePerUnit: 50,
-    totalAmount: 500,
-    personName: 'John Partner',
-    date: new Date('2024-12-12'),
-  },
-  {
-    id: '8',
-    type: 'sell',
-    productName: 'Keyboard',
-    quantity: 8,
-    quantityType: 'unit',
-    pricePerUnit: 80,
-    totalAmount: 640,
-    personName: 'Jane Staff',
-    date: new Date('2024-12-13'),
-  },
-  {
-    id: '9',
-    type: 'sell',
-    productName: 'Laptop',
-    quantity: 2,
-    quantityType: 'unit',
-    pricePerUnit: 1200,
-    totalAmount: 2400,
-    personName: 'John Partner',
-    date: new Date('2024-12-13'),
-  },
-  {
-    id: '10',
-    type: 'expense',
-    expenseCategory: 'salary',
-    expenseDescription: 'Staff salary',
-    totalAmount: 2000,
-    personName: 'Admin User',
-    date: new Date('2024-12-13'),
-  },
-];
-
 // Mock initial investors
-const safeParse = <T,>(key: string, fallback: T): T => {
-  if (typeof window === 'undefined') return fallback;
-  try {
-    const value = localStorage.getItem(key);
-    if (!value) return fallback;
-    return JSON.parse(value) as T;
-  } catch (error) {
-    console.warn(`Failed to parse localStorage key "${key}"`, error);
-    return fallback;
-  }
-};
-
-
 export function AppProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<User | null>(null);
   const [tokens, setTokens] = useState<AuthTokens | null>(() => (USE_API ? loadAuthTokens() : null));
   const [data, setData] = useState<AppDataState>(() => ({
-    users: USE_API ? [] : initialUsers,
-    transactions: USE_API ? [] : initialTransactions,
+    users: [],
+    transactions: [],
     investors: [],
   }));
   const [currentPage, setCurrentPageState] = useState<AppPage>(DEFAULT_PAGE);
@@ -305,28 +171,6 @@ export function AppProvider({ children }: { children: ReactNode }) {
     },
     [isAuthorized, user]
   );
-
-  // Load persisted data from localStorage
-  useEffect(() => {
-    const savedTransactions = safeParse<Transaction[]>(STORAGE_KEYS.transactions, []);
-    const savedUsers = safeParse<User[]>(STORAGE_KEYS.users, []);
-
-    if (USE_API) {
-      return;
-    }
-    setData({
-      users: savedUsers.length ? savedUsers : initialUsers,
-      transactions: savedTransactions.length ? savedTransactions.map((t: any) => ({ ...t, date: new Date(t.date) })) : initialTransactions,
-      investors: [],
-    });
-  }, []);
-
-  // Save data to localStorage
-  useEffect(() => {
-    if (USE_API) return;
-    localStorage.setItem(STORAGE_KEYS.transactions, JSON.stringify(data.transactions));
-    localStorage.setItem(STORAGE_KEYS.users, JSON.stringify(data.users));
-  }, [data]);
 
   useEffect(() => {
     if (!user && currentPage !== 'login') {
