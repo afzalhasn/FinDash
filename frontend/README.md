@@ -1,128 +1,123 @@
+# FinDash Frontend
 
-  # FinDash Cash Flow Tracker
+Next.js App Router UI for the FinDash Cash Flow Tracker. It consumes the FastAPI backend, renders dashboards, and enforces role-based navigation for admins, partners, and staff.
 
-  FinDash is a browser-based cash-flow and operations tracking tool tailored for small trading businesses. It simulates how an admin, partner, or staff member can record purchases, sales, expenses, manage investors, and monitor profitability without a backend. The UI is adapted from the Figma exploration at https://www.figma.com/design/DDUrG1hYqUd3hkFgPnOpWS/FinDash-Cash-Flow-Tracker.
+## Architecture Overview
 
-  ## Product goal
+```
+frontend/
+├─ app/
+│  ├─ layout.tsx          # HTML shell + global styles
+│  └─ page.tsx            # Entrypoint that mounts <App/>
+├─ src/
+│  ├─ app/
+│  │  ├─ App.tsx          # Client-side router driven by AppContext
+│  │  ├─ context/AppContext.tsx
+│  │  └─ pages/*.tsx      # Login, Dashboard, Transactions, Add Entry, Insights, Investor, Accounts
+│  ├─ hooks/              # useTransactions, useInsights, etc. (API backed)
+│  ├─ lib/
+│  │  ├─ api.ts           # Axios wrapper with base URL + interceptors
+│  │  ├─ auth.ts          # Token storage helpers (memory + localStorage fallback)
+│  │  └─ timezone.ts      # IST-normalized formatting + filter serialization
+│  ├─ styles/             # Tailwind/CSS theme
+│  └─ tests/e2e/          # Playwright specs for auth + navigation
+└─ Dockerfile / package.json / tsconfig.json
+```
 
-  FinDash gives teams a single pane of glass for:
+| Layer              | Description                                                                                                        |
+|--------------------|--------------------------------------------------------------------------------------------------------------------|
+| UI Components      | Reusable Tailwind + Radix primitives, Lucide icons, Sonner toasts, Embla/Recharts for charts.                      |
+| App Routing        | `App.tsx` maps the `currentPage` in context to screen components; gating enforced via role matrix.                |
+| State Management   | `AppContext` tracks authenticated user, cached API results, bootstrap status, and exposes actions (CRUD, logout).  |
+| Data Fetching      | Hooks (`useTransactions`, `useInvestors`, `useInsightSummary`, etc.) call the REST API via `lib/api.ts`.           |
+| Auth Integration   | Context `login/logout/me` hit `/api/v1/auth/*`, store tokens with `lib/auth.ts`, and guard pages based on roles.   |
+| Timezone Handling  | `lib/timezone.ts` forces all filters and UI timestamps into IST (Asia/Kolkata) so frontend matches backend logic.  |
+| Testing            | Playwright specs under `tests/e2e` exercise login, dashboard, and admin workflows end-to-end.                      |
 
-  - Monitoring cash movement (purchases, sales, expenses) and profitability in near real time.
-  - Managing investors, their contributions, withdrawals, and net capital.
-  - Controlling user access based on role (admin, partner, staff) without a full auth server.
-  - Reviewing trends via dashboards and insights to inform buying/selling decisions.
+## Feature Set
 
-  Everything runs client-side, making it easy to demo without infrastructure while still modeling the future backend contracts.
+- **Authentication UI**: Login form with API error surfacing, demo credential hints, and loading states.
+- **Role-Based Workspace**:
+  - Dashboard with per-role actions, time filters, summary cards, Recharts visualizations, and recent transactions.
+  - Transactions history with search, type/date filters, retry handling, and read-only view for staff.
+  - Add Entry form (buy/sell/expense) wired to POST `/transactions`, includes inventory validation feedback.
+  - Product Insights charts fed from `/insights/summary`, `/insights/products`, `/insights/timeseries`.
+  - Investor management (admin-only) to add investors, log investments/withdrawals, enforce net balance checks.
+  - Account management (admin-only) to create users, change roles, disable accounts with optimistic toasts.
+- **API Client & Error UX**: Centralized Axios instance adds auth headers, handles 401 refresh/logout, and exposes typed helpers. Toasts show backend validation details.
+- **IST-Aware Filtering**: Date pickers serialize to IST boundaries so backend queries align with local business hours; UI displays dates using `Intl` with `Asia/Kolkata`.
+- **Docker Ready**: Multi-stage Dockerfile installs deps, builds Next13 app, and runs under `node` user; compose stack shares the same `.env`.
+- **Playwright E2E**: `npm run test:e2e` spins up the dev server (or attaches to an existing one) and verifies invalid/valid login plus navigation to Transactions/Investors/Accounts.
 
-  ## High-level architecture
+## Getting Started
 
-  | Layer | Description |
-  | --- | --- |
-  | UI | Next.js App Router (`app/page.tsx`, `app/layout.tsx`). All “pages” are still the screens from the original React bundle (`src/app/pages/*`) rendered inside a single SPA router maintained in context. |
-  | State management | `src/app/context/AppContext.tsx` holds global state for users, sessions, transactions, and investors. |
-  | Persistence | Data is serialized to `localStorage` (keys prefixed with `findash_v2_*`). When the app boots we hydrate from storage and convert dates back into `Date` objects. |
-  | Visualization | Recharts and Tailwind components provide dashboards, filters, and tables. |
-  | Notifications | `sonner` provides toast feedback for CRUD actions. |
+```bash
+cd frontend
+npm install
 
-  ```
-  app/
-    layout.tsx          # root HTML shell & global CSS import
-    page.tsx            # renders <App/> which holds legacy router
-  src/
-    app/
-      App.tsx           # role-based router that swaps pages
-      context/AppContext.tsx
-      pages/*.tsx       # Login, Dashboard, Transactions, Add Entry, Product Insights, Add Investor, New Account
-    styles/*.css
-  ```
+# Environment
+cp ../.env.example ../.env   # includes NEXT_PUBLIC_* vars
+export NEXT_PUBLIC_USE_API=true
+export NEXT_PUBLIC_API_BASE_URL=http://localhost:8000
 
-  ## Data model
+npm run dev        # http://localhost:3000
+npm run build
+npm start          # serve production build
+```
 
-  | Entity | Description |
-  | --- | --- |
-  | `User` | Mock login identities with role and optional disabled flag. Roles: `admin`, `partner`, `staff`. |
-  | `Transaction` | A `buy`, `sell`, or `expense` entry. buys/sells store product, quantity, price per unit; expenses store category/description. |
-  | `Investor` | Tracks total invested/withdrawn/net values and a history of `InvestmentActivity` (investment or withdrawal). |
+Must-have environment variables:
 
-  The context exposes methods such as `login`, `logout`, `addTransaction`, `addInvestor`, `addInvestment`, `addWithdrawal`, `addUser`, `disableUser`, etc., which mutate state and persist the new snapshot.
+```
+NEXT_PUBLIC_USE_API=true
+NEXT_PUBLIC_API_BASE_URL=http://localhost:8000
+```
 
-  ## Application flow
+Optional for tests:
 
-  1. **Login (`src/app/pages/LoginPage.tsx`)**  
-     - Users enter email + password (`password` for all demo accounts).  
-     - Successful login sets `currentPage` to `dashboard` in context.
+```
+E2E_BASE_URL=http://127.0.0.1:3000
+E2E_ADMIN_EMAIL=admin@findash.com
+E2E_ADMIN_PASSWORD=password
+```
 
-  2. **Dashboard (`DashboardPage.tsx`)**  
-     - Role-aware header (admin sees extra actions).  
-     - Time range filters (today/week/month/custom) to slice transaction data.  
-     - Summary cards for purchases, sales, expenses, total cash-in from investors, and profit.  
-     - Recharts visualizations: doughnut for allocation, pie charts per product, bar/line combos, plus top metrics.  
-     - Quick navigation to Add Entry, Insights, Transactions, Investor and Account management.
+## Architecture Flow
 
-  3. **Transactions history (`TransactionsPage.tsx`)**  
-     - Search by product/person, filter by type or date range.  
-     - Role gating: partners can view everything; staff remain read-only.
+1. **Bootstrap**  
+   - App mounts `AppProvider`.  
+   - Context checks stored tokens, calls `/auth/me`, and sets `isBootstrapping` until user + baseline data (users, investors) resolve.  
+   - `AppRouter` redirects to login until authorized.
 
-  4. **Add Entry (`AddEntryPage.tsx`)**  
-     - For admins/partners only.  
-     - Toggle between buy, sell, expense.  
-     - Sell validation ensures the product has prior buys (`getAvailableProducts`).  
-     - On submit we call `addTransaction` and navigate back to dashboard.
+2. **Data Fetch & Cache**  
+   - Hooks (transactions/insights/investors/users) invoke backend endpoints via `lib/api.ts`.  
+   - Success responses update context state; custom events trigger reloads after mutations.  
+   - Failures bubble as `ApiError` instances which pages convert into inline alerts/toasts.
 
-  5. **Product Insights (`ProductInsightsPage.tsx`)**  
-     - Uses filtered transactions to compute per-product profit/loss, profit margins, which is most/least profitable, and displays tables of winners/losers/break-even products.
+3. **Mutations**  
+   - Context exposes `addTransaction`, `addInvestor`, `addInvestment`, `addWithdrawal`, `addUser`, `updateUserRole`, `disableUser`.  
+   - Each method hits the API, updates context caches, and emits events so dependent hooks refresh.
 
-  6. **Investor Management (`AddInvestorPage.tsx`)**  
-     - Admin-only.  
-     - Add new investors, log investments, enforce withdrawals not exceeding net capital, view activity history.
+4. **Role Enforcement**  
+   - `AppContext` defines `PAGE_ACCESS`; `setCurrentPage` + `isAuthorized` ensure only permitted pages render.  
+   - Buttons in headers respect the current user role (e.g., admin sees New Account, Add Investor).
 
-  7. **Account Management (`NewAccountPage.tsx`)**  
-     - Admin-only.  
-     - Create new users, change roles, disable accounts, display permission cheat-sheet.
+5. **IST Handling**  
+   - `lib/timezone.ts` converts date filter picks into ISO strings aligned to IST midnight/end-of-day.  
+   - Pages format all timestamps via `formatIST` so UI matches backend ledger timestamps.
 
-  ### Role permissions
+## Testing & QA
 
-  | Page | Staff | Partner | Admin |
-  | --- | :---: | :---: | :---: |
-  | Dashboard | ✓ | ✓ | ✓ |
-  | Transactions | ✓ (view only) | ✓ (view) | ✓ |
-  | Add Entry | ✗ | ✓ | ✓ |
-  | Product Insights | ✓ | ✓ | ✓ |
-  | Investor Management | ✗ | ✗ | ✓ |
-  | Account Management | ✗ | ✗ | ✓ |
+```bash
+# Unit / lint (if configured)
+npm run lint
 
-  Enforcement happens in the `AppRouter` component where we map each `AppPage` to the roles allowed to access it.
+# End-to-end
+npm install
+npx playwright install
+npm run test:e2e
+```
 
-  ### Persistence flow
+Docs:
 
-  ```
-  on load -> safeParse(localStorage)
-           -> shape data, convert dates
-           -> hydrate context state
-
-  on mutation -> update state via setState
-              -> useEffect serializes to localStorage
-  ```
-
-  ## Getting started
-
-  ```bash
-  npm install
-  npm run dev      # Next.js dev server (defaults to http://localhost:3000)
-  npm run build    # Production build
-  npm start        # Serve production build after npm run build
-  ```
-
-  ### Demo credentials
-
-  Email: `admin@findash.com`, `partner@findash.com`, or `staff@findash.com`  
-  Password: `password`
-
-  ## Extending the project
-
-  - **Backend integration:** Replace the mock context with API calls, keep typing aligned with backend contracts, and swap localStorage persistence for remote fetch/mutations.
-  - **Auth provider:** Plug in real authentication/authorization (e.g., NextAuth) and use route groups/serverside protection rather than the in-app router.
-  - **Data visualizations:** If moving to server components, consider streaming charts or caching summarized metrics per role/time period.
-
-  The current structure deliberately keeps page implementations under `src/app/pages` while Next.js handles routing through `app/page.tsx`, making it straightforward to migrate existing components while adopting modern Next tooling.
-  
+- `docs/api-design.md` – REST contracts shared with backend.
+- `docs/roadmap.md` – Phase breakdown tracking integration progress.
+- `frontend/tests/e2e/README.md` – How to run the Playwright suite.
