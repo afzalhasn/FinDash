@@ -1,20 +1,32 @@
 import React, { useState } from 'react';
 import { useApp } from '../context/AppContext';
-import { LogIn } from 'lucide-react';
+import { LogIn, Loader2 } from 'lucide-react';
+import { ApiError } from '../../lib/api';
 
 export function LoginPage() {
   const { login } = useApp();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
+  const [isLoading, setIsLoading] = useState(false);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError('');
-    
-    const success = await login(email, password);
-    if (!success) {
-      setError('Invalid credentials. Please try again.');
+    setIsLoading(true);
+    try {
+      const success = await login(email, password);
+      if (!success) {
+        setError('Invalid credentials. Please try again.');
+      }
+    } catch (err) {
+      if (err instanceof ApiError) {
+        setError(err.message || 'Unable to sign in. Please check your credentials.');
+      } else {
+        setError('Unexpected error while signing in. Please try again.');
+      }
+    } finally {
+      setIsLoading(false);
     }
   };
 
@@ -70,9 +82,11 @@ export function LoginPage() {
 
           <button
             type="submit"
-            className="w-full bg-indigo-600 text-white py-3 rounded-lg hover:bg-indigo-700 transition-colors"
+            disabled={isLoading}
+            className="w-full bg-indigo-600 text-white py-3 rounded-lg hover:bg-indigo-700 transition-colors disabled:opacity-60 disabled:cursor-not-allowed flex items-center justify-center gap-2"
           >
-            Login
+            {isLoading && <Loader2 className="w-4 h-4 animate-spin" />}
+            {isLoading ? 'Signing in...' : 'Login'}
           </button>
         </form>
 

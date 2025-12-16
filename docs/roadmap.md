@@ -120,7 +120,7 @@ This roadmap breaks work into phases for backend and frontend teams. Complete ea
     - Task 2 ✅: Delete `localStorage` hydration/effects, relying on API queries.
   - Story: UX Enhancements.
     - Task 1: Show loading/error states from React Query.
-    - Task 2: Surface backend validation errors via toasts/forms.
+    - Task 2 ✅: Surface backend validation errors via toasts/forms.
     - Task 3: Add end-to-end tests (Cypress/Playwright) covering auth, transactions, investors, and final QA against Figma.
 
 ---

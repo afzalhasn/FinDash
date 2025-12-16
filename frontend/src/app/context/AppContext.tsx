@@ -256,7 +256,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
         return true;
       } catch (err) {
         console.error('Login failed', err);
-        return false;
+        throw err;
       }
     }
     const foundUser = data.users.find(u => u.email === email && !u.disabled);
