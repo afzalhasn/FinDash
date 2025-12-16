@@ -8,6 +8,7 @@ import { ProductInsightsPage } from './pages/ProductInsightsPage';
 import { AddInvestorPage } from './pages/AddInvestorPage';
 import { NewAccountPage } from './pages/NewAccountPage';
 import { Toaster } from 'sonner';
+import { Loader2 } from 'lucide-react';
 
 const pageComponents: Record<AppPage, JSX.Element> = {
   login: <LoginPage />,
@@ -20,11 +21,22 @@ const pageComponents: Record<AppPage, JSX.Element> = {
 };
 
 function AppRouter() {
-  const { currentPage, user, isAuthorized } = useApp();
+  const { currentPage, user, isAuthorized, isBootstrapping } = useApp();
 
   // Redirect unauthenticated users to login
   if (!user) {
     return pageComponents.login;
+  }
+
+  if (isBootstrapping) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-gray-50">
+        <div className="bg-white rounded-xl shadow-md p-8 flex flex-col items-center gap-3">
+          <Loader2 className="w-8 h-8 text-indigo-600 animate-spin" />
+          <p className="text-gray-600">Loading workspace…</p>
+        </div>
+      </div>
+    );
   }
 
   // Authenticated but accessing forbidden page

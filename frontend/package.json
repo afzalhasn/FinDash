@@ -6,7 +6,8 @@
   "scripts": {
     "dev": "next dev",
     "build": "next build",
-    "start": "next start"
+    "start": "next start",
+    "test:e2e": "playwright test"
   },
   "dependencies": {
     "@radix-ui/react-accordion": "1.2.3",
@@ -63,6 +64,7 @@
     "autoprefixer": "10.4.20",
     "postcss": "8.4.49",
     "tailwindcss": "4.1.12",
-    "typescript": "^5.4.0"
+    "typescript": "^5.4.0",
+    "@playwright/test": "^1.48.0"
   }
 }

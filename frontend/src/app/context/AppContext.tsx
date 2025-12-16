@@ -92,6 +92,7 @@ interface AppContextType {
   users: User[];
   transactions: Transaction[];
   investors: Investor[];
+  isBootstrapping: boolean;
   login: (email: string, password: string) => Promise<boolean>;
   logout: () => void;
   addUser: (user: Omit<User, 'id'>) => Promise<boolean>;
@@ -138,7 +139,12 @@ export function AppProvider({ children }: { children: ReactNode }) {
     transactions: [],
     investors: [],
   }));
+  const [bootStatus, setBootStatus] = useState<{ users: boolean; investors: boolean }>({
+    users: !USE_API,
+    investors: !USE_API,
+  });
   const [currentPage, setCurrentPageState] = useState<AppPage>(DEFAULT_PAGE);
+  const isBootstrapping = !(bootStatus.users && bootStatus.investors);
 
   const isAuthorized = useCallback(
     (page: AppPage, roleOverride?: UserRole | null) => {
@@ -200,6 +206,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
   useEffect(() => {
     if (!USE_API || !user) return;
     let cancelled = false;
+    setBootStatus(prev => ({ ...prev, investors: false }));
     const loadInvestors = async () => {
       try {
         const response = await apiClient.get<InvestorApiResponse[]>('/api/v1/investors');
@@ -208,6 +215,10 @@ export function AppProvider({ children }: { children: ReactNode }) {
         setData(prev => ({ ...prev, investors: normalized }));
       } catch (error) {
         console.warn('Failed to load investors', error);
+      } finally {
+        if (!cancelled) {
+          setBootStatus(prev => ({ ...prev, investors: true }));
+        }
       }
     };
     loadInvestors();
@@ -219,6 +230,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
   useEffect(() => {
     if (!USE_API || !user) return;
     let cancelled = false;
+    setBootStatus(prev => ({ ...prev, users: false }));
     const loadUsers = async () => {
       try {
         const response = await apiClient.get<UserApiResponse[]>('/api/v1/users');
@@ -229,6 +241,10 @@ export function AppProvider({ children }: { children: ReactNode }) {
         }));
       } catch (error) {
         console.warn('Failed to load users', error);
+      } finally {
+        if (!cancelled) {
+          setBootStatus(prev => ({ ...prev, users: true }));
+        }
       }
     };
     loadUsers();
@@ -503,6 +519,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
         currentPage,
         setCurrentPage,
         isAuthorized,
+        isBootstrapping,
       }}
     >
       {children}
