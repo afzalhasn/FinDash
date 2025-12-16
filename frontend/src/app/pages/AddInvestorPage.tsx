@@ -1,8 +1,8 @@
 import React, { useState } from 'react';
 import { useApp } from '../context/AppContext';
 import { ArrowLeft, UserPlus, TrendingUp, TrendingDown, DollarSign } from 'lucide-react';
-import { format } from 'date-fns';
 import { toast } from 'sonner';
+import { formatIST } from '../../lib/timezone';
 
 type ActionMode = 'select' | 'add' | 'investment' | 'withdrawal';
 
@@ -353,7 +353,7 @@ export function AddInvestorPage() {
                               ${investor.netInvestment.toLocaleString()}
                             </td>
                             <td className="py-3 px-4 text-right text-gray-600 text-sm">
-                              {format(investor.lastActivityDate, 'MMM d, yyyy')}
+                              {formatIST(investor.lastActivityDate)}
                             </td>
                             <td className="py-3 px-4 text-center">
                               <button

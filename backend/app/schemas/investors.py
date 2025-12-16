@@ -2,9 +2,10 @@ from datetime import datetime
 from decimal import Decimal
 from typing import Optional
 
-from pydantic import BaseModel
+from pydantic import BaseModel, field_validator
 
 from app.models import InvestmentActivityType
+from app.core.timezone import ensure_ist
 
 
 class InvestorCreate(BaseModel):
@@ -28,3 +29,12 @@ class InvestmentActivityCreate(BaseModel):
     amount: Decimal
     notes: Optional[str] = None
     occurred_at: Optional[datetime] = None
+
+    @field_validator("occurred_at", mode="before")
+    @classmethod
+    def normalize_occurred_at(cls, value):
+        if value is None:
+            return value
+        if isinstance(value, str):
+            value = datetime.fromisoformat(value)
+        return ensure_ist(value)

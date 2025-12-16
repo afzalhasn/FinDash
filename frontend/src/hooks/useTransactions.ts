@@ -3,6 +3,7 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { apiClient, ApiError } from '../lib/api';
 import { useApp, Transaction, QuantityType, ExpenseCategory } from '../app/context/AppContext';
+import { istBoundaryDate, serializeISTBoundary } from '../lib/timezone';
 
 const USE_API = process.env.NEXT_PUBLIC_USE_API === 'true';
 const DEFAULT_PAGE_SIZE = 25;
@@ -67,8 +68,14 @@ const buildQueryString = (filters: NormalizedFilters) => {
   if (filters.product) params.set('product', filters.product);
   if (filters.person) params.set('person', filters.person);
   if (filters.search) params.set('search', filters.search);
-  if (filters.startDate) params.set('startDate', filters.startDate);
-  if (filters.endDate) params.set('endDate', filters.endDate);
+  if (filters.startDate) {
+    const serialized = serializeISTBoundary(filters.startDate);
+    if (serialized) params.set('start', serialized);
+  }
+  if (filters.endDate) {
+    const serialized = serializeISTBoundary(filters.endDate, { endOfDay: true });
+    if (serialized) params.set('end', serialized);
+  }
   params.set('page', filters.page.toString());
   params.set('pageSize', filters.pageSize.toString());
   const queryString = params.toString();
@@ -89,12 +96,8 @@ const buildLocalResponse = (transactions: Transaction[], filters: NormalizedFilt
   const searchTerm = filters.search?.trim().toLowerCase() ?? '';
   const productFilter = filters.product?.trim().toLowerCase() ?? '';
   const personFilter = filters.person?.trim().toLowerCase() ?? '';
-  const startDate = filters.startDate ? new Date(filters.startDate) : undefined;
-  const endDate = filters.endDate ? new Date(filters.endDate) : undefined;
-
-  if (endDate) {
-    endDate.setHours(23, 59, 59, 999);
-  }
+  const startDate = filters.startDate ? istBoundaryDate(filters.startDate) : undefined;
+  const endDate = filters.endDate ? istBoundaryDate(filters.endDate, { endOfDay: true }) : undefined;
 
   const filtered = transactions.filter(transaction => {
     if (filters.type && filters.type !== 'all' && transaction.type !== filters.type) {

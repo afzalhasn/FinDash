@@ -1,5 +1,4 @@
 import enum
-from datetime import datetime
 
 from sqlalchemy import CheckConstraint, Column, DateTime, Enum, Float, ForeignKey, Numeric, String, Text
 from sqlalchemy.dialects.postgresql import UUID
@@ -8,6 +7,7 @@ from sqlalchemy.sql import text
 
 from .base import Base
 from .user import User
+from app.core.timezone import IST_NOW_SQL, now_ist
 
 
 class TransactionType(str, enum.Enum):
@@ -46,18 +46,18 @@ class Transaction(Base):
     total_amount = Column(Numeric(12, 2), nullable=False)
 
     notes = Column(Text)
-    occurred_at = Column(DateTime(timezone=True), nullable=False, server_default=text("timezone('utc', now())"))
+    occurred_at = Column(DateTime(timezone=True), nullable=False, server_default=IST_NOW_SQL)
 
     person_name = Column(String(255))
     recorded_by_id: Mapped[UUID] = mapped_column(UUID(as_uuid=True), ForeignKey("user.id"), nullable=True)
     recorded_by: Mapped["User"] = relationship(User, backref="transactions")
 
-    created_at = Column(DateTime(timezone=True), nullable=False, server_default=text("timezone('utc', now())"))
+    created_at = Column(DateTime(timezone=True), nullable=False, server_default=IST_NOW_SQL)
     updated_at = Column(
         DateTime(timezone=True),
         nullable=False,
-        server_default=text("timezone('utc', now())"),
-        onupdate=datetime.utcnow,
+        server_default=IST_NOW_SQL,
+        onupdate=now_ist,
     )
 
     __table_args__ = (

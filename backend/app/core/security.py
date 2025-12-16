@@ -1,5 +1,5 @@
 from dataclasses import dataclass
-from datetime import datetime, timedelta, timezone
+from datetime import timedelta
 from typing import Optional
 import uuid
 
@@ -8,6 +8,7 @@ from jose import JWTError, jwt
 from passlib.context import CryptContext
 
 from .config import Settings
+from .timezone import now_ist
 
 
 pwd_context = CryptContext(schemes=["pbkdf2_sha256"], deprecated="auto")
@@ -29,14 +30,14 @@ class TokenPair:
 
 def create_access_token(subject: str, settings: Settings, expires_minutes: Optional[int] = None) -> str:
     expires_delta = timedelta(minutes=expires_minutes or settings.access_token_expire_minutes)
-    now = datetime.now(timezone.utc)
+    now = now_ist()
     expire = now + expires_delta
     payload = {"sub": subject, "exp": expire, "iat": now, "jti": str(uuid.uuid4())}
     return jwt.encode(payload, settings.jwt_secret_key, algorithm=settings.jwt_algorithm)
 
 
 def create_refresh_token(subject: str, settings: Settings) -> str:
-    expire = datetime.now(timezone.utc) + timedelta(days=settings.refresh_token_expire_days)
+    expire = now_ist() + timedelta(days=settings.refresh_token_expire_days)
     payload = {"sub": subject, "exp": expire, "type": "refresh"}
     return jwt.encode(payload, settings.jwt_secret_key, algorithm=settings.jwt_algorithm)
 

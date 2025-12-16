@@ -19,6 +19,11 @@ from app.models import (
     User,
     UserRole,
 )
+from app.core.timezone import ensure_ist
+
+
+def ist_datetime(value: str) -> datetime:
+    return ensure_ist(datetime.fromisoformat(value))
 
 
 def seed_users(session: Session) -> dict[str, User]:
@@ -62,7 +67,7 @@ def seed_transactions(session: Session, users: dict[str, User]):
             "price_per_unit": Decimal("800"),
             "total_amount": Decimal("4000"),
             "person_name": "John Partner",
-            "occurred_at": datetime.fromisoformat("2024-12-09T00:00:00"),
+            "occurred_at": ist_datetime("2024-12-09T00:00:00"),
             "notes": "Bulk purchase",
             "recorded_by": "partner@findash.com",
         },
@@ -74,7 +79,7 @@ def seed_transactions(session: Session, users: dict[str, User]):
             "price_per_unit": Decimal("1200"),
             "total_amount": Decimal("3600"),
             "person_name": "Jane Staff",
-            "occurred_at": datetime.fromisoformat("2024-12-10T00:00:00"),
+            "occurred_at": ist_datetime("2024-12-10T00:00:00"),
             "recorded_by": "staff@findash.com",
         },
         {
@@ -83,7 +88,7 @@ def seed_transactions(session: Session, users: dict[str, User]):
             "expense_description": "Office rent for December",
             "total_amount": Decimal("1500"),
             "person_name": "Admin User",
-            "occurred_at": datetime.fromisoformat("2024-12-01T00:00:00"),
+            "occurred_at": ist_datetime("2024-12-01T00:00:00"),
             "recorded_by": "admin@findash.com",
         },
         {
@@ -94,7 +99,7 @@ def seed_transactions(session: Session, users: dict[str, User]):
             "price_per_unit": Decimal("15"),
             "total_amount": Decimal("300"),
             "person_name": "John Partner",
-            "occurred_at": datetime.fromisoformat("2024-12-11T00:00:00"),
+            "occurred_at": ist_datetime("2024-12-11T00:00:00"),
             "recorded_by": "partner@findash.com",
         },
         {
@@ -105,7 +110,7 @@ def seed_transactions(session: Session, users: dict[str, User]):
             "price_per_unit": Decimal("25"),
             "total_amount": Decimal("375"),
             "person_name": "Jane Staff",
-            "occurred_at": datetime.fromisoformat("2024-12-12T00:00:00"),
+            "occurred_at": ist_datetime("2024-12-12T00:00:00"),
             "recorded_by": "staff@findash.com",
         },
         {
@@ -114,7 +119,7 @@ def seed_transactions(session: Session, users: dict[str, User]):
             "expense_description": "Delivery charges",
             "total_amount": Decimal("200"),
             "person_name": "John Partner",
-            "occurred_at": datetime.fromisoformat("2024-12-12T00:00:00"),
+            "occurred_at": ist_datetime("2024-12-12T00:00:00"),
             "recorded_by": "partner@findash.com",
         },
         {
@@ -125,7 +130,7 @@ def seed_transactions(session: Session, users: dict[str, User]):
             "price_per_unit": Decimal("50"),
             "total_amount": Decimal("500"),
             "person_name": "John Partner",
-            "occurred_at": datetime.fromisoformat("2024-12-12T12:00:00"),
+            "occurred_at": ist_datetime("2024-12-12T12:00:00"),
             "recorded_by": "partner@findash.com",
         },
         {
@@ -136,7 +141,7 @@ def seed_transactions(session: Session, users: dict[str, User]):
             "price_per_unit": Decimal("80"),
             "total_amount": Decimal("640"),
             "person_name": "Jane Staff",
-            "occurred_at": datetime.fromisoformat("2024-12-13T00:00:00"),
+            "occurred_at": ist_datetime("2024-12-13T00:00:00"),
             "recorded_by": "staff@findash.com",
         },
         {
@@ -147,7 +152,7 @@ def seed_transactions(session: Session, users: dict[str, User]):
             "price_per_unit": Decimal("1200"),
             "total_amount": Decimal("2400"),
             "person_name": "John Partner",
-            "occurred_at": datetime.fromisoformat("2024-12-13T08:00:00"),
+            "occurred_at": ist_datetime("2024-12-13T08:00:00"),
             "recorded_by": "partner@findash.com",
         },
         {
@@ -156,7 +161,7 @@ def seed_transactions(session: Session, users: dict[str, User]):
             "expense_description": "Staff salary",
             "total_amount": Decimal("2000"),
             "person_name": "Admin User",
-            "occurred_at": datetime.fromisoformat("2024-12-13T00:00:00"),
+            "occurred_at": ist_datetime("2024-12-13T00:00:00"),
             "recorded_by": "admin@findash.com",
         },
     ]
@@ -177,18 +182,18 @@ def seed_investors(session: Session):
             "total_invested": Decimal("60000"),
             "total_withdrawn": Decimal("5000"),
             "net_investment": Decimal("55000"),
-            "last_activity_at": datetime.fromisoformat("2024-12-10T00:00:00"),
+            "last_activity_at": ist_datetime("2024-12-10T00:00:00"),
             "activities": [
                 {
                     "type": InvestmentActivityType.investment,
                     "amount": Decimal("60000"),
-                    "occurred_at": datetime.fromisoformat("2024-12-01T00:00:00"),
+                    "occurred_at": ist_datetime("2024-12-01T00:00:00"),
                     "notes": "Initial investment",
                 },
                 {
                     "type": InvestmentActivityType.withdrawal,
                     "amount": Decimal("5000"),
-                    "occurred_at": datetime.fromisoformat("2024-12-10T00:00:00"),
+                    "occurred_at": ist_datetime("2024-12-10T00:00:00"),
                     "notes": "Partial withdrawal",
                 },
             ],
@@ -198,18 +203,18 @@ def seed_investors(session: Session):
             "total_invested": Decimal("40000"),
             "total_withdrawn": Decimal("10000"),
             "net_investment": Decimal("30000"),
-            "last_activity_at": datetime.fromisoformat("2024-12-05T00:00:00"),
+            "last_activity_at": ist_datetime("2024-12-05T00:00:00"),
             "activities": [
                 {
                     "type": InvestmentActivityType.investment,
                     "amount": Decimal("40000"),
-                    "occurred_at": datetime.fromisoformat("2024-12-05T00:00:00"),
+                    "occurred_at": ist_datetime("2024-12-05T00:00:00"),
                     "notes": "First investment",
                 },
                 {
                     "type": InvestmentActivityType.withdrawal,
                     "amount": Decimal("10000"),
-                    "occurred_at": datetime.fromisoformat("2024-12-10T00:00:00"),
+                    "occurred_at": ist_datetime("2024-12-10T00:00:00"),
                     "notes": "Partial withdrawal",
                 },
             ],

@@ -1,4 +1,3 @@
-from datetime import datetime
 from uuid import UUID
 
 from fastapi import APIRouter, Depends, HTTPException
@@ -7,6 +6,7 @@ from app.api.dependencies import get_investor_service, require_roles
 from app.schemas import InvestorCreate, InvestorOut, InvestmentActivityCreate
 from app.services import InvestorService
 from app.models import Investor, InvestmentActivity
+from app.core.timezone import ensure_ist, now_ist
 
 router = APIRouter(prefix="/investors", tags=["investors"], dependencies=[Depends(require_roles("admin"))])
 
@@ -44,7 +44,7 @@ def add_activity(
         type=payload.type,
         amount=payload.amount,
         notes=payload.notes,
-        occurred_at=payload.occurred_at or datetime.utcnow(),
+        occurred_at=ensure_ist(payload.occurred_at) or now_ist(),
     )
     updated = service.add_activity(investor, activity)
     return updated

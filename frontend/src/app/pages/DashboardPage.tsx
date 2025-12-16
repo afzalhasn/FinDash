@@ -2,8 +2,9 @@ import React, { useState, useMemo } from 'react';
 import { useApp } from '../context/AppContext';
 import { Plus, TrendingUp, TrendingDown, DollarSign, Calendar, LogOut, History, BarChart3, Users, UserPlus } from 'lucide-react';
 import { PieChart, Pie, Cell, ResponsiveContainer, Tooltip, Legend, BarChart, Bar, XAxis, YAxis, CartesianGrid } from 'recharts';
-import { startOfWeek, endOfWeek, startOfMonth, endOfMonth, format, startOfDay, endOfDay } from 'date-fns';
+import { startOfWeek, endOfWeek, startOfMonth, endOfMonth, startOfDay, endOfDay } from 'date-fns';
 import { useInsightSummary, useProductInsights } from '../../hooks/useInsights';
+import { formatIST } from '../../lib/timezone';
 
 type TimeFilter = 'today' | 'week' | 'month' | 'custom';
 
@@ -480,7 +481,7 @@ export function DashboardPage() {
                           : transaction.productName}
                       </p>
                       <p className="text-sm text-gray-500">
-                        {format(transaction.date, 'MMM d, yyyy • h:mm a')}
+                        {formatIST(transaction.date, { includeTime: true })}
                       </p>
                     </div>
                   </div>

@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { useApp } from '../context/AppContext';
 import { useTransactions, TransactionTypeFilter } from '../../hooks/useTransactions';
 import { ArrowLeft, Search, Filter, ShoppingCart, DollarSign, Receipt, Loader2, AlertCircle } from 'lucide-react';
-import { format } from 'date-fns';
+import { formatIST } from '../../lib/timezone';
 
 export function TransactionsPage() {
   const { user, setCurrentPage } = useApp();
@@ -203,7 +203,7 @@ export function TransactionsPage() {
                             : transaction.productName}
                         </h3>
                         <p className="text-sm text-gray-500">
-                          {format(transaction.date, 'MMM d, yyyy • h:mm a')}
+                          {formatIST(transaction.date, { includeTime: true })}
                         </p>
                       </div>
                     </div>

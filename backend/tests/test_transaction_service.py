@@ -1,4 +1,3 @@
-from datetime import datetime
 import uuid
 
 import pytest
@@ -7,6 +6,7 @@ from fastapi import HTTPException
 from app.models import Transaction, TransactionType, User, UserRole
 from app.services.transactions import TransactionService
 from app.schemas.transactions import TransactionCreate
+from app.core.timezone import now_ist
 
 
 class FakeTransactionRepo:
@@ -52,7 +52,7 @@ def make_payload(product="Laptop", type_=TransactionType.sell):
         price_per_unit=None,
         total_amount=100,
         notes=None,
-        occurred_at=datetime.utcnow(),
+        occurred_at=now_ist(),
     )
 
 

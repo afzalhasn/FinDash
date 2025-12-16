@@ -4,6 +4,7 @@ from sqlalchemy.orm import relationship
 from sqlalchemy.sql import text
 
 from .base import Base
+from app.core.timezone import IST_NOW_SQL, now_ist
 
 
 class Investor(Base):
@@ -13,9 +14,14 @@ class Investor(Base):
     total_invested = Column(Numeric(14, 2), nullable=False, default=0)
     total_withdrawn = Column(Numeric(14, 2), nullable=False, default=0)
     net_investment = Column(Numeric(14, 2), nullable=False, default=0)
-    last_activity_at = Column(DateTime(timezone=True), server_default=text("timezone('utc', now())"))
+    last_activity_at = Column(DateTime(timezone=True), server_default=IST_NOW_SQL)
 
-    created_at = Column(DateTime(timezone=True), nullable=False, server_default=text("timezone('utc', now())"))
-    updated_at = Column(DateTime(timezone=True), nullable=False, server_default=text("timezone('utc', now())"))
+    created_at = Column(DateTime(timezone=True), nullable=False, server_default=IST_NOW_SQL)
+    updated_at = Column(
+        DateTime(timezone=True),
+        nullable=False,
+        server_default=IST_NOW_SQL,
+        onupdate=now_ist,
+    )
 
     activities = relationship("InvestmentActivity", back_populates="investor", cascade="all, delete-orphan")

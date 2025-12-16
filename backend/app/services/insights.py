@@ -2,10 +2,11 @@ from datetime import datetime
 from decimal import Decimal
 from typing import Any, Dict, List
 
-from sqlalchemy import func, select
+from sqlalchemy import func, select, case
 from sqlalchemy.orm import Session
 
 from app.models import Transaction, TransactionType
+from app.core.timezone import ensure_ist
 
 
 class InsightService:
@@ -13,21 +14,23 @@ class InsightService:
         self.session = session
 
     def summary(self, start: datetime | None = None, end: datetime | None = None) -> Dict[str, Any]:
+        start = ensure_ist(start)
+        end = ensure_ist(end)
         stmt = select(
             func.sum(
-                func.case(
+                case(
                     (Transaction.type == TransactionType.buy, Transaction.total_amount),
                     else_=Decimal("0"),
                 )
             ).label("purchases"),
             func.sum(
-                func.case(
+                case(
                     (Transaction.type == TransactionType.sell, Transaction.total_amount),
                     else_=Decimal("0"),
                 )
             ).label("sales"),
             func.sum(
-                func.case(
+                case(
                     (Transaction.type == TransactionType.expense, Transaction.total_amount),
                     else_=Decimal("0"),
                 )
@@ -53,17 +56,19 @@ class InsightService:
         }
 
     def product_metrics(self, start: datetime | None = None, end: datetime | None = None) -> List[dict[str, Any]]:
+        start = ensure_ist(start)
+        end = ensure_ist(end)
         stmt = (
             select(
                 Transaction.product_name.label("product"),
                 func.sum(
-                    func.case(
+                    case(
                         (Transaction.type == TransactionType.sell, Transaction.total_amount),
                         else_=Decimal("0"),
                     )
                 ).label("sales"),
                 func.sum(
-                    func.case(
+                    case(
                         (Transaction.type == TransactionType.buy, Transaction.total_amount),
                         else_=Decimal("0"),
                     )
@@ -100,6 +105,8 @@ class InsightService:
         start: datetime | None = None,
         end: datetime | None = None,
     ) -> List[dict[str, Any]]:
+        start = ensure_ist(start)
+        end = ensure_ist(end)
         trunc_map = {"day": "day", "week": "week", "month": "month"}
         if interval not in trunc_map:
             raise ValueError("Invalid interval")
@@ -108,19 +115,19 @@ class InsightService:
         stmt = select(
             bucket,
             func.sum(
-                func.case(
+                case(
                     (Transaction.type == TransactionType.buy, Transaction.total_amount),
                     else_=Decimal("0"),
                 )
             ).label("purchases"),
             func.sum(
-                func.case(
+                case(
                     (Transaction.type == TransactionType.sell, Transaction.total_amount),
                     else_=Decimal("0"),
                 )
             ).label("sales"),
             func.sum(
-                func.case(
+                case(
                     (Transaction.type == TransactionType.expense, Transaction.total_amount),
                     else_=Decimal("0"),
                 )

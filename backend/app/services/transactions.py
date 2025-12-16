@@ -1,12 +1,12 @@
-from datetime import datetime
-
 import logging
+from datetime import datetime
 
 from fastapi import HTTPException, status
 
 from app.models import Transaction, TransactionType, User
 from app.repositories import TransactionRepository
 from app.schemas.transactions import TransactionCreate
+from app.core.timezone import ensure_ist
 
 logger = logging.getLogger(__name__)
 
@@ -24,7 +24,13 @@ class TransactionService:
         start: datetime | None = None,
         end: datetime | None = None,
     ) -> list[Transaction]:
-        return self.transactions.search(type_=type_, product=product, person=person, start=start, end=end)
+        return self.transactions.search(
+            type_=type_,
+            product=product,
+            person=person,
+            start=ensure_ist(start),
+            end=ensure_ist(end),
+        )
 
     def create_transaction(self, payload: TransactionCreate, user: User) -> Transaction:
         if payload.type == TransactionType.sell:

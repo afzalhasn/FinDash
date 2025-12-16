@@ -6,6 +6,7 @@ from sqlalchemy.orm import relationship
 from sqlalchemy.sql import text
 
 from .base import Base
+from app.core.timezone import IST_NOW_SQL
 
 
 class InvestmentActivityType(str, enum.Enum):
@@ -19,7 +20,7 @@ class InvestmentActivity(Base):
     type = Column(Enum(InvestmentActivityType, name="investment_activity_type"), nullable=False)
     amount = Column(Numeric(14, 2), nullable=False)
     notes = Column(Text)
-    occurred_at = Column(DateTime(timezone=True), nullable=False, server_default=text("timezone('utc', now())"))
+    occurred_at = Column(DateTime(timezone=True), nullable=False, server_default=IST_NOW_SQL)
     created_by = Column(String(255))
 
     investor = relationship("Investor", back_populates="activities")

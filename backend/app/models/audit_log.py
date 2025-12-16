@@ -3,6 +3,7 @@ from sqlalchemy.dialects.postgresql import UUID
 from sqlalchemy.sql import text
 
 from .base import Base
+from app.core.timezone import IST_NOW_SQL
 
 
 class AuditLog(Base):
@@ -12,4 +13,4 @@ class AuditLog(Base):
     entity_id = Column(UUID(as_uuid=True), nullable=True)
     action = Column(String(100), nullable=False)
     payload = Column(Text, nullable=True)
-    created_at = Column(DateTime(timezone=True), nullable=False, server_default=text("timezone('utc', now())"))
+    created_at = Column(DateTime(timezone=True), nullable=False, server_default=IST_NOW_SQL)

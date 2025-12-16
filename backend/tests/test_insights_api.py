@@ -1,6 +1,6 @@
 import os
 import uuid
-from datetime import datetime, timezone
+from datetime import datetime
 from decimal import Decimal
 from types import SimpleNamespace
 
@@ -9,6 +9,7 @@ from fastapi.testclient import TestClient
 
 from app.api.dependencies import get_current_user
 from app.core import config, database
+from app.core.timezone import IST_TIMEZONE
 from app.main import create_app
 from app.models import Base, Transaction, TransactionType, QuantityType, ExpenseCategory, UserRole
 
@@ -22,14 +23,14 @@ def _strip_server_defaults():
 def _seed_transactions(session):
     base_entries = [
         # Purchases
-        ("buy", "Laptop", Decimal("4000"), datetime(2024, 12, 9, tzinfo=timezone.utc)),
-        ("buy", "Mouse", Decimal("300"), datetime(2024, 12, 11, tzinfo=timezone.utc)),
-        ("buy", "Keyboard", Decimal("500"), datetime(2024, 12, 12, tzinfo=timezone.utc)),
+        ("buy", "Laptop", Decimal("4000"), datetime(2024, 12, 9, tzinfo=IST_TIMEZONE)),
+        ("buy", "Mouse", Decimal("300"), datetime(2024, 12, 11, tzinfo=IST_TIMEZONE)),
+        ("buy", "Keyboard", Decimal("500"), datetime(2024, 12, 12, tzinfo=IST_TIMEZONE)),
         # Sales
-        ("sell", "Laptop", Decimal("3600"), datetime(2024, 12, 10, tzinfo=timezone.utc)),
-        ("sell", "Mouse", Decimal("375"), datetime(2024, 12, 12, 1, tzinfo=timezone.utc)),
-        ("sell", "Keyboard", Decimal("640"), datetime(2024, 12, 13, tzinfo=timezone.utc)),
-        ("sell", "Laptop", Decimal("2400"), datetime(2024, 12, 13, 8, tzinfo=timezone.utc)),
+        ("sell", "Laptop", Decimal("3600"), datetime(2024, 12, 10, tzinfo=IST_TIMEZONE)),
+        ("sell", "Mouse", Decimal("375"), datetime(2024, 12, 12, 1, tzinfo=IST_TIMEZONE)),
+        ("sell", "Keyboard", Decimal("640"), datetime(2024, 12, 13, tzinfo=IST_TIMEZONE)),
+        ("sell", "Laptop", Decimal("2400"), datetime(2024, 12, 13, 8, tzinfo=IST_TIMEZONE)),
     ]
 
     for txn_type, product, total, occurred in base_entries:
@@ -49,9 +50,9 @@ def _seed_transactions(session):
         )
 
     expense_entries = [
-        (ExpenseCategory.rent, Decimal("1500"), "Office rent", datetime(2024, 12, 1, tzinfo=timezone.utc)),
-        (ExpenseCategory.transport, Decimal("200"), "Delivery", datetime(2024, 12, 12, tzinfo=timezone.utc)),
-        (ExpenseCategory.salary, Decimal("2000"), "Salary", datetime(2024, 12, 13, tzinfo=timezone.utc)),
+        (ExpenseCategory.rent, Decimal("1500"), "Office rent", datetime(2024, 12, 1, tzinfo=IST_TIMEZONE)),
+        (ExpenseCategory.transport, Decimal("200"), "Delivery", datetime(2024, 12, 12, tzinfo=IST_TIMEZONE)),
+        (ExpenseCategory.salary, Decimal("2000"), "Salary", datetime(2024, 12, 13, tzinfo=IST_TIMEZONE)),
     ]
     for category, total, description, occurred in expense_entries:
         session.add(
