@@ -1,6 +1,7 @@
 import uuid
 
 from fastapi import FastAPI, Depends, Request
+from sqlalchemy import text
 from fastapi.middleware.cors import CORSMiddleware
 
 from app.api import router
@@ -48,7 +49,7 @@ def create_app() -> FastAPI:
     def ready_probe():
         factory = get_session_factory(settings)
         with factory() as session:
-            session.execute("SELECT 1")
+            session.execute(text("SELECT 1"))
         return {"status": "ready"}
 
     return app
