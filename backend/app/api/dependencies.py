@@ -1,7 +1,7 @@
 import uuid
 
 from fastapi import Depends, HTTPException, status
-from fastapi.security import OAuth2PasswordBearer
+from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
 from sqlalchemy.orm import Session
 
 from app.core.config import get_settings
@@ -19,7 +19,7 @@ from app.services import (
     MaintenanceService,
 )
 
-oauth2_scheme = OAuth2PasswordBearer(tokenUrl="/api/v1/auth/login")
+http_bearer = HTTPBearer(auto_error=False)
 
 
 def get_db_session():
@@ -64,9 +64,12 @@ def get_maintenance_service(factory: ServiceFactory = Depends(get_service_factor
     return factory.maintenance_service()
 
 def get_current_user(
-    token: str = Depends(oauth2_scheme),
+    credentials: HTTPAuthorizationCredentials = Depends(http_bearer),
     session: Session = Depends(get_db_session),
 ):
+    if credentials is None or credentials.scheme.lower() != "bearer":
+        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Not authenticated")
+    token = credentials.credentials
     settings = get_settings()
     subject = decode_token(token, settings)
     try:

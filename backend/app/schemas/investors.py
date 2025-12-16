@@ -1,6 +1,7 @@
 from datetime import datetime
 from decimal import Decimal
 from typing import Optional
+from uuid import UUID
 
 from pydantic import BaseModel, field_validator
 
@@ -13,7 +14,7 @@ class InvestorCreate(BaseModel):
 
 
 class InvestorOut(BaseModel):
-    id: str
+    id: UUID
     name: str
     total_invested: Decimal
     total_withdrawn: Decimal

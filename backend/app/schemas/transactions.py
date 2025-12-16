@@ -1,5 +1,6 @@
 from datetime import datetime
 from decimal import Decimal
+from uuid import UUID
 from typing import Literal, Optional
 
 from pydantic import BaseModel, field_validator
@@ -35,7 +36,7 @@ class TransactionCreate(TransactionBase):
 
 
 class TransactionOut(TransactionBase):
-    id: str
+    id: UUID
     person_name: str
 
     class Config:
