@@ -51,7 +51,7 @@ This roadmap breaks work into phases for backend and frontend teams. Complete ea
   - Story: Dashboard summaries.
     - Task 1 ✅: Build aggregation queries for purchases, sales, expenses, profit, investor cash.
     - Task 2 ✅: Implement `/insights/summary`, `/insights/products`, `/insights/timeseries`.
-    - Task 3: Add integration tests using seeded data.
+    - Task 3 ✅: Add integration tests (`backend/tests/test_insights_api.py`) exercising `/insights/summary` and `/insights/products` with seeded data.
 
 ### Phase 5 – Investor Management & Finalization
 - **Epic: Investor Services**
