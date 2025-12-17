@@ -199,7 +199,7 @@ export function ProductInsightsPage() {
                         Rank #{index + 1}
                       </span>
                       <p className="text-green-600 text-lg">
-                        +${product.profit.toLocaleString()}
+                        +₹{product.profit.toLocaleString()}
                       </p>
                     </div>
                   </div>
@@ -228,7 +228,7 @@ export function ProductInsightsPage() {
                         Loss
                       </span>
                       <p className="text-red-600 text-lg">
-                        -${Math.abs(product.profit).toLocaleString()}
+                        -₹{Math.abs(product.profit).toLocaleString()}
                       </p>
                     </div>
                   </div>

@@ -496,7 +496,7 @@ export function DashboardPage() {
                     <p className={`${
                       transaction.type === 'sell' ? 'text-green-600' : 'text-gray-900'
                     }`}>
-                      ${transaction.totalAmount.toLocaleString()}
+                      ₹{transaction.totalAmount.toLocaleString()}
                     </p>
                   </div>
                 </div>

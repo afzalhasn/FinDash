@@ -265,7 +265,7 @@ export function TransactionsPage() {
 
                         <div>
                           <p className="text-sm text-gray-500">Total</p>
-                          <p className="text-gray-900">${transaction.totalAmount.toLocaleString()}</p>
+                          <p className="text-gray-900">₹{transaction.totalAmount.toLocaleString()}</p>
                         </div>
 
                         <div>
@@ -291,7 +291,7 @@ export function TransactionsPage() {
                       transaction.type === 'buy' ? 'text-red-600' :
                       'text-orange-600'
                     }`}>
-                      ${transaction.totalAmount.toLocaleString()}
+                      ₹{transaction.totalAmount.toLocaleString()}
                     </p>
                   </div>
                 </div>

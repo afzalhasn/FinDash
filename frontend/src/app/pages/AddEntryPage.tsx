@@ -399,7 +399,7 @@ export function AddEntryPage() {
               <div className="mb-6 p-4 bg-indigo-50 rounded-lg">
                 <p className="text-gray-700 mb-1">Total Amount</p>
                 <p className="text-indigo-600 text-2xl">
-                  ${isNaN(totalAmount) ? '0.00' : totalAmount.toFixed(2)}
+                  ₹{isNaN(totalAmount) ? '0.00' : totalAmount.toFixed(2)}
                 </p>
               </div>
             </>

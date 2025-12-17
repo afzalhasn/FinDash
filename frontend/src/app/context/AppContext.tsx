@@ -607,9 +607,9 @@ export function AppProvider({ children }: { children: ReactNode }) {
       investors: prev.investors.map(inv =>
         inv.id === mapped.id
           ? {
-              ...mapped,
-              investments: inv.investments,
-            }
+            ...mapped,
+            investments: inv.investments,
+          }
           : inv
       ),
     }));
@@ -671,11 +671,10 @@ export function AppProvider({ children }: { children: ReactNode }) {
         users,
         login,
         logout,
-      addUser,
-      updateUserRole,
-      disableUser,
-      toggleUserStatus,
-      toggleUserStatus,
+        addUser,
+        updateUserRole,
+        disableUser,
+        toggleUserStatus,
         transactions,
         getAvailableProducts,
         investors,
