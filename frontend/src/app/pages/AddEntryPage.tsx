@@ -6,6 +6,7 @@ import { ApiError } from '../../shared/lib/api';
 import type { QuantityType, ExpenseCategory, CreateTransactionPayload } from '../../features/transactions/types';
 import { useAvailableProducts, useCreateTransaction } from '../../features/transactions/hooks/useTransactions';
 import { useInventory } from '../../features/transactions/hooks/useInventory';
+import { PageLayout } from '../../shared/ui/layout/PageLayout';
 
 type EntryType = 'buy' | 'sell' | 'expense';
 
@@ -144,24 +145,19 @@ export function AddEntryPage() {
   };
 
   return (
-    <div className="min-h-screen bg-gray-50">
-      {/* Header */}
-      <header className="bg-white border-b border-gray-200">
-        <div className="max-w-3xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
-          <button
-            onClick={handleCancel}
-            className="flex items-center gap-2 text-gray-600 hover:text-gray-900 mb-2"
-          >
-            <ArrowLeft className="w-5 h-5" />
-            Back to Dashboard
-          </button>
-          <h1 className="text-gray-900">Add New Entry</h1>
-          <p className="text-gray-600">Person: {user?.name}</p>
-        </div>
-      </header>
-
-      <main className="max-w-3xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        <form onSubmit={handleSubmit} className="bg-white rounded-xl shadow-sm p-6">
+    <PageLayout
+      header={{
+        title: 'Add New Entry',
+        subtitle: `Person: ${user?.name ?? 'Unknown'}`,
+        backButton: {
+          label: 'Back to Dashboard',
+          onClick: handleCancel,
+          icon: ArrowLeft,
+        },
+      }}
+      contentClassName="max-w-3xl"
+    >
+      <form onSubmit={handleSubmit} className="bg-white rounded-xl shadow-sm p-6">
           {/* Entry Type Toggle */}
           <div className="mb-6">
             <label className="block text-gray-700 mb-3">Entry Type</label>
@@ -490,8 +486,7 @@ export function AddEntryPage() {
               Cancel
             </button>
           </div>
-        </form>
-      </main>
-    </div>
+      </form>
+    </PageLayout>
   );
 }

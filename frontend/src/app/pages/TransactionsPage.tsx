@@ -4,6 +4,7 @@ import { useTransactions } from '../../features/transactions/hooks/useTransactio
 import type { TransactionTypeFilter } from '../../features/transactions/types';
 import { ArrowLeft, Search, Filter, ShoppingCart, DollarSign, Receipt, Loader2, AlertCircle } from 'lucide-react';
 import { formatIST } from '../../shared/lib/timezone';
+import { PageLayout } from '../../shared/ui/layout/PageLayout';
 
 export function TransactionsPage() {
   const { user, setCurrentPage } = useApp();
@@ -28,25 +29,17 @@ export function TransactionsPage() {
   const totalPages = Math.max(1, Math.ceil(totalTransactions / pageSize));
 
   return (
-    <div className="min-h-screen bg-gray-50">
-      {/* Header */}
-      <header className="bg-white border-b border-gray-200 sticky top-0 z-10">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
-          <button
-            onClick={() => setCurrentPage('dashboard')}
-            className="flex items-center gap-2 text-gray-600 hover:text-gray-900 mb-2"
-          >
-            <ArrowLeft className="w-5 h-5" />
-            Back to Dashboard
-          </button>
-          <h1 className="text-gray-900">Transactions History</h1>
-          <p className="text-gray-600">
-            {user?.role === 'partner' ? 'View all transactions' : 'Read-only access'}
-          </p>
-        </div>
-      </header>
-
-      <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+    <PageLayout
+      header={{
+        title: 'Transactions History',
+        subtitle: user?.role === 'partner' ? 'View all transactions' : 'Read-only access',
+        backButton: {
+          label: 'Back to Dashboard',
+          onClick: () => setCurrentPage('dashboard'),
+          icon: ArrowLeft,
+        },
+      }}
+    >
         {/* Filters */}
         <div className="bg-white rounded-xl shadow-sm p-6 mb-6">
           <div className="flex items-center gap-2 mb-4">
@@ -348,7 +341,6 @@ export function TransactionsPage() {
             ))
           )}
         </div>
-      </main>
-    </div>
+    </PageLayout>
   );
 }

@@ -1,10 +1,12 @@
 import React, { useState, useMemo } from 'react';
 import { useApp, UserRole } from '../context/AppContext';
+import { useUsersFeature } from '../../features/users/hooks/useUsers';
 import { ArrowLeft, UserPlus, Shield, Eye, EyeOff, ToggleLeft, ToggleRight } from 'lucide-react';
 import { toast } from 'sonner';
 
 export function NewAccountPage() {
-  const { user: currentUser, users, addUser, updateUserRole, toggleUserStatus, setCurrentPage } = useApp();
+  const { user: currentUser, setCurrentPage } = useApp();
+  const { users, addUser, updateUserRole, toggleUserStatus } = useUsersFeature();
   const [showForm, setShowForm] = useState(false);
   const [newUserName, setNewUserName] = useState('');
   const [newUserEmail, setNewUserEmail] = useState('');

@@ -1,18 +1,20 @@
 import React, { useState, useMemo } from 'react';
 import { useApp } from '../context/AppContext';
-import { Plus, TrendingUp, TrendingDown, DollarSign, Calendar, LogOut, History, BarChart3, Users, UserPlus } from 'lucide-react';
+import { Plus, TrendingUp, TrendingDown, DollarSign, LogOut, History, BarChart3, Users, UserPlus } from 'lucide-react';
 import { PieChart, Pie, Cell, ResponsiveContainer, Tooltip, Legend, BarChart, Bar, XAxis, YAxis, CartesianGrid } from 'recharts';
 import { startOfWeek, endOfWeek, startOfMonth, endOfMonth, startOfDay, endOfDay } from 'date-fns';
 import { useInsightSummary, useProductInsights } from '../../hooks/useInsights';
+import { useInvestorsFeature } from '../../features/investors/hooks/useInvestors';
 import { formatIST } from '../../shared/lib/timezone';
-
-type TimeFilter = 'today' | 'week' | 'month' | 'custom';
+import { DateRangeFilter, PresetOption } from '../../shared/ui/filters/DateRangeFilter';
+import { PageLayout } from '../../shared/ui/layout/PageLayout';
 
 const COLORS = ['#6366f1', '#10b981', '#f59e0b', '#ef4444', '#8b5cf6', '#ec4899'];
 
 export function DashboardPage() {
-  const { user, logout, transactions, investors, setCurrentPage } = useApp();
-  const [timeFilter, setTimeFilter] = useState<TimeFilter>('week');
+  const { user, logout, transactions, setCurrentPage } = useApp();
+  const { investors } = useInvestorsFeature();
+  const [preset, setPreset] = useState<PresetOption>('week');
   const [customStartDate, setCustomStartDate] = useState('');
   const [customEndDate, setCustomEndDate] = useState('');
 
@@ -20,7 +22,7 @@ export function DashboardPage() {
   const dateRange = useMemo(() => {
     const now = new Date();
     
-    switch (timeFilter) {
+    switch (preset) {
       case 'today':
         return {
           start: startOfDay(now),
@@ -47,7 +49,7 @@ export function DashboardPage() {
           end: endOfWeek(now)
         };
     }
-  }, [timeFilter, customStartDate, customEndDate]);
+  }, [preset, customStartDate, customEndDate]);
 
   const { data: summary, isLoading: summaryLoading, isError: summaryError, error: summaryErrorDetails, refetch: refetchSummary } = useInsightSummary({
     start: dateRange.start,
@@ -114,155 +116,90 @@ export function DashboardPage() {
   }, [transactions]);
 
   const filterLabel = useMemo(() => {
-    switch (timeFilter) {
+    switch (preset) {
       case 'today': return 'Today';
       case 'week': return 'This Week';
       case 'month': return 'This Month';
       case 'custom': return 'Custom Range';
     }
-  }, [timeFilter]);
+  }, [preset]);
+
+  const headerActions = (
+    <div className="flex items-center gap-3 flex-wrap">
+      {user?.role === 'admin' && (
+        <>
+          <button
+            onClick={() => setCurrentPage('new-account')}
+            className="flex items-center gap-2 px-4 py-2 text-gray-700 hover:bg-gray-100 rounded-lg transition-colors"
+          >
+            <Users className="w-5 h-5" />
+            <span>New Account</span>
+          </button>
+          <button
+            onClick={() => setCurrentPage('add-investor')}
+            className="flex items-center gap-2 px-4 py-2 text-gray-700 hover:bg-gray-100 rounded-lg transition-colors"
+          >
+            <UserPlus className="w-5 h-5" />
+            <span>Add Investor</span>
+          </button>
+        </>
+      )}
+
+      <button
+        onClick={() => setCurrentPage('insights')}
+        className="flex items-center gap-2 px-4 py-2 text-gray-700 hover:bg-gray-100 rounded-lg transition-colors"
+      >
+        <BarChart3 className="w-5 h-5" />
+        <span>Insights</span>
+      </button>
+
+      <button
+        onClick={() => setCurrentPage('history')}
+        className="flex items-center gap-2 px-4 py-2 text-gray-700 hover:bg-gray-100 rounded-lg transition-colors"
+      >
+        <History className="w-5 h-5" />
+        <span>Transactions</span>
+      </button>
+
+      {(user?.role === 'admin' || user?.role === 'partner') && (
+        <button
+          onClick={() => setCurrentPage('add-entry')}
+          className="flex items-center gap-2 px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition-colors"
+        >
+          <Plus className="w-5 h-5" />
+          <span>Add Entry</span>
+        </button>
+      )}
+
+      <button
+        onClick={logout}
+        className="flex items-center gap-2 px-4 py-2 text-red-600 hover:bg-red-50 rounded-lg transition-colors"
+      >
+        <LogOut className="w-5 h-5" />
+        <span>Logout</span>
+      </button>
+    </div>
+  );
 
   return (
-    <div className="min-h-screen bg-gray-50">
-      {/* Header */}
-      <header className="bg-white border-b border-gray-200 sticky top-0 z-10">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
-          <div className="flex items-center justify-between">
-            <div>
-              <h1 className="text-indigo-600">FinDash</h1>
-              <p className="text-gray-600">Welcome, {user?.name} ({user?.role})</p>
-            </div>
-            
-            <div className="flex items-center gap-3 flex-wrap">
-              {/* Admin-only buttons */}
-              {user?.role === 'admin' && (
-                <>
-                  <button
-                    onClick={() => setCurrentPage('new-account')}
-                    className="flex items-center gap-2 px-4 py-2 text-gray-700 hover:bg-gray-100 rounded-lg transition-colors"
-                  >
-                    <Users className="w-5 h-5" />
-                    <span>New Account</span>
-                  </button>
-                  <button
-                    onClick={() => setCurrentPage('add-investor')}
-                    className="flex items-center gap-2 px-4 py-2 text-gray-700 hover:bg-gray-100 rounded-lg transition-colors"
-                  >
-                    <UserPlus className="w-5 h-5" />
-                    <span>Add Investor</span>
-                  </button>
-                </>
-              )}
-
-              <button
-                onClick={() => setCurrentPage('insights')}
-                className="flex items-center gap-2 px-4 py-2 text-gray-700 hover:bg-gray-100 rounded-lg transition-colors"
-              >
-                <BarChart3 className="w-5 h-5" />
-                <span>Insights</span>
-              </button>
-              
-              <button
-                onClick={() => setCurrentPage('history')}
-                className="flex items-center gap-2 px-4 py-2 text-gray-700 hover:bg-gray-100 rounded-lg transition-colors"
-              >
-                <History className="w-5 h-5" />
-                <span>Transactions</span>
-              </button>
-
-              {/* Admin & Partner can add entries */}
-              {(user?.role === 'admin' || user?.role === 'partner') && (
-                <button
-                  onClick={() => setCurrentPage('add-entry')}
-                  className="flex items-center gap-2 px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition-colors"
-                >
-                  <Plus className="w-5 h-5" />
-                  <span>Add Entry</span>
-                </button>
-              )}
-              
-              <button
-                onClick={logout}
-                className="flex items-center gap-2 px-4 py-2 text-red-600 hover:bg-red-50 rounded-lg transition-colors"
-              >
-                <LogOut className="w-5 h-5" />
-                <span>Logout</span>
-              </button>
-            </div>
-          </div>
-        </div>
-      </header>
-
-      <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        {/* Time Filter */}
-        <div className="bg-white rounded-xl shadow-sm p-6 mb-6">
-          <div className="flex items-center gap-4 flex-wrap">
-            <Calendar className="w-5 h-5 text-gray-400" />
-            <div className="flex gap-2 flex-wrap">
-              <button
-                onClick={() => setTimeFilter('today')}
-                className={`px-4 py-2 rounded-lg transition-colors ${
-                  timeFilter === 'today'
-                    ? 'bg-indigo-600 text-white'
-                    : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
-                }`}
-              >
-                Today
-              </button>
-              <button
-                onClick={() => setTimeFilter('week')}
-                className={`px-4 py-2 rounded-lg transition-colors ${
-                  timeFilter === 'week'
-                    ? 'bg-indigo-600 text-white'
-                    : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
-                }`}
-              >
-                This Week
-              </button>
-              <button
-                onClick={() => setTimeFilter('month')}
-                className={`px-4 py-2 rounded-lg transition-colors ${
-                  timeFilter === 'month'
-                    ? 'bg-indigo-600 text-white'
-                    : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
-                }`}
-              >
-                This Month
-              </button>
-              <button
-                onClick={() => setTimeFilter('custom')}
-                className={`px-4 py-2 rounded-lg transition-colors ${
-                  timeFilter === 'custom'
-                    ? 'bg-indigo-600 text-white'
-                    : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
-                }`}
-              >
-                Custom
-              </button>
-            </div>
-
-            {timeFilter === 'custom' && (
-              <div className="flex gap-2 items-center ml-auto">
-                <input
-                  type="date"
-                  value={customStartDate}
-                  onChange={(e) => setCustomStartDate(e.target.value)}
-                  className="px-3 py-2 border border-gray-300 rounded-lg"
-                />
-                <span className="text-gray-500">to</span>
-                <input
-                  type="date"
-                  value={customEndDate}
-                  onChange={(e) => setCustomEndDate(e.target.value)}
-                  className="px-3 py-2 border border-gray-300 rounded-lg"
-                />
-              </div>
-            )}
-          </div>
-        </div>
-
-        {/* Summary Cards - 5 cards */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4 mb-8">
+    <PageLayout
+      header={{
+        title: 'FinDash',
+        subtitle: `Welcome, ${user?.name ?? 'Guest'} (${user?.role ?? 'unknown'})`,
+        actions: headerActions,
+      }}
+    >
+      <DateRangeFilter
+        value={{ preset, startDate: customStartDate, endDate: customEndDate }}
+        onChange={({ preset: nextPreset, startDate, endDate }) => {
+          setPreset(nextPreset);
+          setCustomStartDate(startDate ?? '');
+          setCustomEndDate(endDate ?? '');
+        }}
+        className="mb-6"
+      />
+      {/* Summary Cards - 5 cards */}
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4 mb-8">
           {/* Total Cash In */}
           <div className="bg-gradient-to-br from-purple-500 to-purple-600 rounded-xl shadow-sm p-6 text-white">
             <div className="flex items-center justify-between mb-2">
@@ -530,7 +467,6 @@ export function DashboardPage() {
               </div>
             </div>
           </div>
-      </main>
-    </div>
+    </PageLayout>
   );
 }

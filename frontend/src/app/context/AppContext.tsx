@@ -15,50 +15,12 @@ import { AppPage, DEFAULT_PAGE, PUBLIC_PAGES } from '../../features/auth/routes'
 import { MOCK_USERS } from '../../features/auth/mockData';
 import type { Transaction, QuantityType, ExpenseCategory } from '../../features/transactions/types';
 import { fetchAllTransactions } from '../../features/transactions/services/api';
+import type { Investor, InvestmentActivity, InvestorActivityPayload } from '../../features/investors/types';
+import { fetchInvestors, createInvestorRequest, createInvestorActivityRequest } from '../../features/investors/services/api';
+import { fetchUsers, createUserRequest, updateUserRoleRequest, toggleUserStatusRequest } from '../../features/users/services/api';
 export type { User, UserRole } from '../../features/auth/types';
 export type { AppPage } from '../../features/auth/routes';
 export type { Transaction, QuantityType, ExpenseCategory } from '../../features/transactions/types';
-
-export interface Investor {
-  id: string;
-  name: string;
-  totalInvested: number;
-  totalWithdrawn: number;
-  netInvestment: number;
-  lastActivityDate: Date;
-  investments: InvestmentActivity[];
-}
-
-export interface InvestmentActivity {
-  id: string;
-  type: 'investment' | 'withdrawal';
-  amount: number;
-  date: Date;
-  notes?: string;
-}
-
-interface InvestorApiResponse {
-  id: string;
-  name: string;
-  total_invested: number;
-  total_withdrawn: number;
-  net_investment: number;
-  last_activity_at?: string | null;
-}
-
-interface InvestorActivityPayload {
-  type: 'investment' | 'withdrawal';
-  amount: number;
-  notes?: string;
-}
-
-interface UserApiResponse {
-  id: string;
-  name: string;
-  email: string;
-  role: UserRole;
-  disabled?: boolean;
-}
 
 export interface AppDataState {
   users: User[];
@@ -91,16 +53,6 @@ interface AppContextType {
 const AppContext = createContext<AppContextType | undefined>(undefined);
 
 const USE_API = process.env.NEXT_PUBLIC_USE_API === 'true';
-
-const mapInvestorResponse = (inv: InvestorApiResponse): Investor => ({
-  id: inv.id,
-  name: inv.name,
-  totalInvested: Number(inv.total_invested),
-  totalWithdrawn: Number(inv.total_withdrawn),
-  netInvestment: Number(inv.net_investment),
-  lastActivityDate: inv.last_activity_at ? new Date(inv.last_activity_at) : new Date(),
-  investments: [],
-});
 
 const LOG_PREFIX = '[AppContext]';
 
@@ -171,11 +123,10 @@ export function AppProvider({ children }: { children: ReactNode }) {
     const loadInvestors = async () => {
       logInfo('Loading investors from API');
       try {
-        const response = await apiClient.get<InvestorApiResponse[]>('/api/v1/investors');
-        logInfo('Investors response received', response.length);
+        const investors = await fetchInvestors();
+        logInfo('Investors response received', investors.length);
         if (cancelled) return;
-        const normalized: Investor[] = response.map(mapInvestorResponse);
-        setData(prev => ({ ...prev, investors: normalized }));
+        setData(prev => ({ ...prev, investors }));
       } catch (error) {
         logWarn('Failed to load investors', error);
       } finally {
@@ -201,12 +152,12 @@ export function AppProvider({ children }: { children: ReactNode }) {
     const loadUsers = async () => {
       logInfo('Loading users from API');
       try {
-        const response = await apiClient.get<UserApiResponse[]>('/api/v1/users');
-        logInfo('Users response received', response.length);
+        const loadedUsers = await fetchUsers();
+        logInfo('Users response received', loadedUsers.length);
         if (cancelled) return;
         setData(prev => ({
           ...prev,
-          users: response.map(u => ({ ...u })),
+          users: loadedUsers,
         }));
       } catch (error) {
         logWarn('Failed to load users', error);
@@ -267,12 +218,12 @@ export function AppProvider({ children }: { children: ReactNode }) {
     if (USE_API) {
       logInfo('Creating user via API', { email: userData.email });
       try {
-        const response = await apiClient.post<UserApiResponse>('/api/v1/users', {
+        const created = await createUserRequest({
           ...userData,
           password: 'password',
         });
-        logInfo('User created', response);
-        setData(prev => ({ ...prev, users: [...prev.users, response] }));
+        logInfo('User created', created);
+        setData(prev => ({ ...prev, users: [...prev.users, created] }));
         return true;
       } catch (error) {
         logError('Failed to create user', error);
@@ -291,13 +242,11 @@ export function AppProvider({ children }: { children: ReactNode }) {
     if (USE_API) {
       logInfo('Updating user role via API', { userId, role });
       try {
-        const response = await apiClient.patch<UserApiResponse>(`/api/v1/users/${userId}/role`, {
-          role,
-        });
+        const response = await updateUserRoleRequest(userId, role);
         logInfo('User role updated', response);
         setData(prev => ({
           ...prev,
-          users: prev.users.map(u => (u.id === response.id ? { ...u, role: response.role, disabled: response.disabled } : u)),
+          users: prev.users.map(u => (u.id === response.id ? response : u)),
         }));
         return true;
       } catch (error) {
@@ -319,15 +268,10 @@ export function AppProvider({ children }: { children: ReactNode }) {
         const role = target?.role ?? 'staff';
         logInfo('Toggling user status via API', { userId, disabled, role });
         try {
-          const response = await apiClient.patch<UserApiResponse>(`/api/v1/users/${userId}/role`, {
-            role,
-            disabled,
-          });
+          const response = await toggleUserStatusRequest(userId, role, disabled);
           setData(prev => ({
             ...prev,
-            users: prev.users.map(u =>
-              u.id === response.id ? { ...u, role: response.role, disabled: response.disabled } : u
-            ),
+            users: prev.users.map(u => (u.id === response.id ? response : u)),
           }));
           return true;
         } catch (error) {
@@ -367,10 +311,9 @@ export function AppProvider({ children }: { children: ReactNode }) {
     if (USE_API) {
       logInfo('Creating investor via API', { name });
       try {
-        const response = await apiClient.post<InvestorApiResponse>('/api/v1/investors', { name });
+        const response = await createInvestorRequest(name);
         logInfo('Investor created', response);
-        const mapped = mapInvestorResponse(response);
-        setData(prev => ({ ...prev, investors: [...prev.investors, mapped] }));
+        setData(prev => ({ ...prev, investors: [...prev.investors, response] }));
         return true;
       } catch (error) {
         logError('Failed to add investor', error);
@@ -422,14 +365,13 @@ export function AppProvider({ children }: { children: ReactNode }) {
     }));
   }, []);
 
-  const updateInvestorFromResponse = useCallback((response: InvestorApiResponse) => {
-    const mapped = mapInvestorResponse(response);
+  const updateInvestorFromResponse = useCallback((investor: Investor) => {
     setData(prev => ({
       ...prev,
       investors: prev.investors.map(inv =>
-        inv.id === mapped.id
+        inv.id === investor.id
           ? {
-            ...mapped,
+            ...investor,
             investments: inv.investments,
           }
           : inv
@@ -443,9 +385,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
       if (USE_API) {
         try {
           logInfo('Adding investment via API', { investorId, amount, notes });
-          const response = await apiClient.post<InvestorApiResponse>(`/api/v1/investors/${investorId}/activities`, {
-            ...payload,
-          });
+          const response = await createInvestorActivityRequest(investorId, payload);
           logInfo('Investment recorded', response);
           updateInvestorFromResponse(response);
           return true;
@@ -466,9 +406,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
       if (USE_API) {
         try {
           logInfo('Adding withdrawal via API', { investorId, amount, notes });
-          const response = await apiClient.post<InvestorApiResponse>(`/api/v1/investors/${investorId}/activities`, {
-            ...payload,
-          });
+          const response = await createInvestorActivityRequest(investorId, payload);
           logInfo('Withdrawal recorded', response);
           updateInvestorFromResponse(response);
           return true;

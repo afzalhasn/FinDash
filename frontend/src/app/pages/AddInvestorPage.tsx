@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { useApp } from '../context/AppContext';
+import { useInvestorsFeature } from '../../features/investors/hooks/useInvestors';
 import { ArrowLeft, UserPlus, TrendingUp, TrendingDown, DollarSign } from 'lucide-react';
 import { toast } from 'sonner';
 import { formatIST } from '../../shared/lib/timezone';
@@ -7,7 +8,8 @@ import { formatIST } from '../../shared/lib/timezone';
 type ActionMode = 'select' | 'add' | 'investment' | 'withdrawal';
 
 export function AddInvestorPage() {
-  const { investors, addInvestor, addInvestment, addWithdrawal, setCurrentPage } = useApp();
+  const { setCurrentPage } = useApp();
+  const { investors, addInvestor, addInvestment, addWithdrawal } = useInvestorsFeature();
   const [mode, setMode] = useState<ActionMode>('select');
   const [selectedInvestorId, setSelectedInvestorId] = useState('');
   const [newInvestorName, setNewInvestorName] = useState('');

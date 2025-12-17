@@ -29,24 +29,24 @@ Break the monolithic `AppContext` into smaller, testable providers/services owne
   _Story 2.2.2_: Extract the inventory utilities from `AddEntryPage` and expose them as `useInventory` hook. ✅  
   _Story 2.2.3_: Collocate `useTransactions` hook and ensure it only depends on the new module. ✅
 
-- **Task 2.3 — Create Investors & Users modules**  
-  Mirror the approach for investors and user management.  
-  _Story 2.3.1_: Move investor mapper + CRUD helpers into `features/investors`.  
-  _Story 2.3.2_: Move user-role logic (toggle, role update) into `features/users/services`.  
-  _Story 2.3.3_: Replace direct `AppContext` calls in pages with feature hooks.
+- **Task 2.3 — Create Investors & Users modules** ✅  
+  Mirror the approach for investors and user management. Both features now expose `types`, `services/api.ts`, and hooks that pages consume.  
+  _Story 2.3.1_: Move investor mapper + CRUD helpers into `features/investors`. ✅  
+  _Story 2.3.2_: Move user-role logic (toggle, role update) into `features/users/services`. ✅  
+  _Story 2.3.3_: Replace direct `AppContext` calls in pages with feature hooks. ✅
 
 ## Epic 3: Introduce Page Shell & Shared Layout Components
 Remove repeated layout code and standardize page scaffolding.
 
-- **Task 3.1 — Build `PageLayout` component**  
-  Encapsulate shared header/back button/time filter slots under `src/shared/ui/layout`.  
-  _Story 3.1.1_: Extract the dashboard header into `PageHeader`.  
-  _Story 3.1.2_: Update Add Entry, Transactions, Insights pages to use the shared shell.
+- **Task 3.1 — Build `PageLayout` component** ✅  
+  Encapsulate shared header/back button/time filter slots under `src/shared/ui/layout`. `PageHeader` + `PageLayout` now power Add Entry, Transactions, and Insights pages.  
+  _Story 3.1.1_: Extract the dashboard header into `PageHeader`. ✅  
+  _Story 3.1.2_: Update Add Entry, Transactions, Insights pages to use the shared shell. ✅
 
 - **Task 3.2 — Create reusable filter/date controls**  
   Encapsulate the repeated time range filters and date pickers.  
-  _Story 3.2.1_: Implement `DateRangeFilter` component with presets (today/week/month/custom).  
-  _Story 3.2.2_: Replace bespoke filter code in Dashboard/ProductInsights with the new component.
+  _Story 3.2.1_: Implement `DateRangeFilter` component with presets (today/week/month/custom). ✅  
+  _Story 3.2.2_: Replace bespoke filter code in Dashboard/ProductInsights with the new component. ✅
 
 ## Epic 4: Hardening & Tests
 Ensure each module can be tested in isolation.

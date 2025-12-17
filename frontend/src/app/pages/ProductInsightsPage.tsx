@@ -2,12 +2,12 @@
 
 import React, { useMemo, useState } from 'react';
 import { useApp } from '../context/AppContext';
-import { ArrowLeft, TrendingUp, TrendingDown, Calendar, AlertCircle } from 'lucide-react';
+import { ArrowLeft, TrendingUp, TrendingDown, AlertCircle } from 'lucide-react';
 import { startOfWeek, endOfWeek, startOfMonth, endOfMonth, startOfDay, endOfDay } from 'date-fns';
 import { ResponsiveContainer, LineChart, Line, CartesianGrid, XAxis, YAxis, Tooltip, Legend } from 'recharts';
 import { useProductInsights, useTimeseries } from '../../hooks/useInsights';
-
-type TimeFilter = 'today' | 'week' | 'month' | 'custom';
+import { DateRangeFilter, PresetOption } from '../../shared/ui/filters/DateRangeFilter';
+import { PageLayout } from '../../shared/ui/layout/PageLayout';
 
 interface DisplayProduct {
   productName: string;
@@ -19,13 +19,13 @@ interface DisplayProduct {
 
 export function ProductInsightsPage() {
   const { setCurrentPage } = useApp();
-  const [timeFilter, setTimeFilter] = useState<TimeFilter>('week');
+  const [preset, setPreset] = useState<PresetOption>('week');
   const [customStartDate, setCustomStartDate] = useState('');
   const [customEndDate, setCustomEndDate] = useState('');
 
   const dateRange = useMemo(() => {
     const now = new Date();
-    switch (timeFilter) {
+    switch (preset) {
       case 'today':
         return { start: startOfDay(now), end: endOfDay(now) };
       case 'month':
@@ -39,10 +39,10 @@ export function ProductInsightsPage() {
       default:
         return { start: startOfWeek(now, { weekStartsOn: 1 }), end: endOfWeek(now, { weekStartsOn: 1 }) };
     }
-  }, [customEndDate, customStartDate, timeFilter]);
+  }, [customEndDate, customStartDate, preset]);
 
   const filterLabel = useMemo(() => {
-    switch (timeFilter) {
+    switch (preset) {
       case 'today':
         return 'Today';
       case 'week':
@@ -52,10 +52,10 @@ export function ProductInsightsPage() {
       case 'custom':
         return 'Custom Range';
     }
-  }, [timeFilter]);
+  }, [preset]);
 
   const intervalForTimeseries = useMemo<'day' | 'week' | 'month'>(() => {
-    switch (timeFilter) {
+    switch (preset) {
       case 'month':
         return 'week';
       case 'today':
@@ -66,7 +66,7 @@ export function ProductInsightsPage() {
       default:
         return 'day';
     }
-  }, [timeFilter]);
+  }, [preset]);
 
   const {
     data: productData,
@@ -101,64 +101,27 @@ export function ProductInsightsPage() {
   const showError = productError || timeseriesError;
 
   return (
-    <div className="min-h-screen bg-gray-50">
-      <header className="bg-white border-b border-gray-200 sticky top-0 z-10">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
-          <button
-            onClick={() => setCurrentPage('dashboard')}
-            className="flex items-center gap-2 text-gray-600 hover:text-gray-900 mb-2"
-          >
-            <ArrowLeft className="w-5 h-5" />
-            Back to Dashboard
-          </button>
-          <h1 className="text-gray-900">Product Insights</h1>
-          <p className="text-gray-600">Analyze product-wise profitability</p>
-        </div>
-      </header>
+    <PageLayout
+      header={{
+        title: 'Product Insights',
+        subtitle: 'Analyze product-wise profitability',
+        backButton: {
+          label: 'Back to Dashboard',
+          onClick: () => setCurrentPage('dashboard'),
+          icon: ArrowLeft,
+        },
+      }}
+    >
+      <DateRangeFilter
+        value={{ preset, startDate: customStartDate, endDate: customEndDate }}
+        onChange={({ preset: nextPreset, startDate, endDate }) => {
+          setPreset(nextPreset);
+          setCustomStartDate(startDate ?? '');
+          setCustomEndDate(endDate ?? '');
+        }}
+        className="mb-6"
+      />
 
-      <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        <div className="bg-white rounded-xl shadow-sm p-6 mb-6">
-          <div className="flex items-center gap-4 flex-wrap">
-            <Calendar className="w-5 h-5 text-gray-400" />
-            <div className="flex gap-2 flex-wrap">
-              {(['today', 'week', 'month', 'custom'] as TimeFilter[]).map(filter => (
-                <button
-                  key={filter}
-                  onClick={() => setTimeFilter(filter)}
-                  className={`px-4 py-2 rounded-lg transition-colors ${
-                    timeFilter === filter ? 'bg-indigo-600 text-white' : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
-                  }`}
-                >
-                  {filter === 'today'
-                    ? 'Today'
-                    : filter === 'week'
-                      ? 'This Week'
-                      : filter === 'month'
-                        ? 'This Month'
-                        : 'Custom'}
-                </button>
-              ))}
-            </div>
-
-            {timeFilter === 'custom' && (
-              <div className="flex gap-2 items-center ml-auto">
-                <input
-                  type="date"
-                  value={customStartDate}
-                  onChange={e => setCustomStartDate(e.target.value)}
-                  className="px-3 py-2 border border-gray-300 rounded-lg"
-                />
-                <span className="text-gray-500">to</span>
-                <input
-                  type="date"
-                  value={customEndDate}
-                  onChange={e => setCustomEndDate(e.target.value)}
-                  className="px-3 py-2 border border-gray-300 rounded-lg"
-                />
-              </div>
-            )}
-          </div>
-        </div>
 
         {showError && (
           <div className="bg-red-50 border border-red-100 rounded-xl p-4 mb-6 flex items-start gap-3 text-red-700">
@@ -282,7 +245,6 @@ export function ProductInsightsPage() {
             </div>
           )}
         </div>
-      </main>
-    </div>
+    </PageLayout>
   );
 }
