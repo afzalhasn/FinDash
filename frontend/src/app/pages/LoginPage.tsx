@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { useApp } from '../context/AppContext';
 import { LogIn, Loader2 } from 'lucide-react';
-import { ApiError } from '../../lib/api';
+import { ApiError } from '../../shared/lib/api';
 
 export function LoginPage() {
   const { login } = useApp();

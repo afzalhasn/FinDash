@@ -4,10 +4,10 @@
 - ✅ Frontend now reads the backend's snake_case fields (`access_token`, `refresh_token`, `expires_in`) and sends `refresh_token` during logout (`frontend/src/app/context/AppContext.tsx`). Tokens persist across reloads and logout revocations succeed because the contract matches `TokenResponse`/`LogoutRequest` on the API (`backend/app/schemas/auth.py:27-32`, `backend/app/api/routes/auth.py:15-41`).
 
 ## 2. Transactions list is incompatible _(Resolved)_
-- ✅ `useTransactions` now queries the API with the parameters it supports (`type/product/person/start/end`), converts the snake_case payload into the app’s camelCase `Transaction` model, and performs filtering/pagination client-side (`frontend/src/hooks/useTransactions.ts`). This keeps the UI contract consistent without requiring backend changes, so list and history views load correctly again.
+- ✅ `useTransactions` now queries the API with the parameters it supports (`type/product/person/start/end`), converts the snake_case payload into the app’s camelCase `Transaction` model, and performs filtering/pagination client-side (`frontend/src/features/transactions/hooks/useTransactions.ts`). This keeps the UI contract consistent without requiring backend changes, so list and history views load correctly again.
 
 ## 3. Transaction creation + inventory guardrails fail _(Resolved)_
-- ✅ `useCreateTransaction` converts the UI payload into the API’s snake_case schema before posting, and `useAvailableProducts` now calls `/api/v1/transactions/products/available` (`frontend/src/hooks/useTransactions.ts`). Add-entry validations no longer 422, so sell protection and transaction creation work with the live backend.
+- ✅ `useCreateTransaction` converts the UI payload into the API’s snake_case schema before posting, and `useAvailableProducts` now calls `/api/v1/transactions/products/available` (`frontend/src/features/transactions/hooks/useTransactions.ts`). Add-entry validations no longer 422, so sell protection and transaction creation work with the live backend.
 
 ## 4. Context never syncs transactions with the API _(Resolved)_
 - ✅ `AppContext` now loads `/api/v1/transactions` after login, converts the payload to the app’s camelCase model, and stores it in `data.transactions`. Components such as the dashboard widgets and inventory helpers finally receive real data even when `NEXT_PUBLIC_USE_API=true` (`frontend/src/app/context/AppContext.tsx`).

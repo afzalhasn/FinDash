@@ -4,7 +4,7 @@ import { Plus, TrendingUp, TrendingDown, DollarSign, Calendar, LogOut, History, 
 import { PieChart, Pie, Cell, ResponsiveContainer, Tooltip, Legend, BarChart, Bar, XAxis, YAxis, CartesianGrid } from 'recharts';
 import { startOfWeek, endOfWeek, startOfMonth, endOfMonth, startOfDay, endOfDay } from 'date-fns';
 import { useInsightSummary, useProductInsights } from '../../hooks/useInsights';
-import { formatIST } from '../../lib/timezone';
+import { formatIST } from '../../shared/lib/timezone';
 
 type TimeFilter = 'today' | 'week' | 'month' | 'custom';
 

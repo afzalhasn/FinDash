@@ -1,8 +1,9 @@
 import React, { useState } from 'react';
 import { useApp } from '../context/AppContext';
-import { useTransactions, TransactionTypeFilter } from '../../hooks/useTransactions';
+import { useTransactions } from '../../features/transactions/hooks/useTransactions';
+import type { TransactionTypeFilter } from '../../features/transactions/types';
 import { ArrowLeft, Search, Filter, ShoppingCart, DollarSign, Receipt, Loader2, AlertCircle } from 'lucide-react';
-import { formatIST } from '../../lib/timezone';
+import { formatIST } from '../../shared/lib/timezone';
 
 export function TransactionsPage() {
   const { user, setCurrentPage } = useApp();

@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { useApp } from '../context/AppContext';
 import { ArrowLeft, UserPlus, TrendingUp, TrendingDown, DollarSign } from 'lucide-react';
 import { toast } from 'sonner';
-import { formatIST } from '../../lib/timezone';
+import { formatIST } from '../../shared/lib/timezone';
 
 type ActionMode = 'select' | 'add' | 'investment' | 'withdrawal';
 

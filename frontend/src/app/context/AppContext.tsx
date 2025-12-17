@@ -7,38 +7,17 @@ import React, {
   ReactNode,
   useEffect,
   useCallback,
-  useRef,
 } from 'react';
-import { apiClient } from '../../lib/api';
-import { saveAuthTokens, loadAuthTokens, clearAuthTokens, AuthTokens } from '../../lib/auth';
-
-export type UserRole = 'admin' | 'partner' | 'staff';
-export type QuantityType = 'kg' | 'dozen' | 'pack' | 'unit' | 'custom';
-export type ExpenseCategory = 'rent' | 'transport' | 'salary' | 'other';
-export type AppPage = 'login' | 'dashboard' | 'add-entry' | 'history' | 'insights' | 'add-investor' | 'new-account';
-
-export interface User {
-  id: string;
-  email: string;
-  name: string;
-  role: UserRole;
-  disabled?: boolean;
-}
-
-export interface Transaction {
-  id: string;
-  type: 'buy' | 'sell' | 'expense';
-  productName?: string; // For buy/sell
-  expenseCategory?: ExpenseCategory; // For expense
-  expenseDescription?: string; // For expense
-  quantity?: number; // For buy/sell
-  quantityType?: QuantityType; // For buy/sell
-  pricePerUnit?: number; // For buy/sell
-  totalAmount: number;
-  personName: string;
-  date: Date;
-  notes?: string;
-}
+import { apiClient } from '../../shared/lib/api';
+import { useAuth } from '../../features/auth/context';
+import type { User, UserRole } from '../../features/auth/types';
+import { AppPage, DEFAULT_PAGE, PUBLIC_PAGES } from '../../features/auth/routes';
+import { MOCK_USERS } from '../../features/auth/mockData';
+import type { Transaction, QuantityType, ExpenseCategory } from '../../features/transactions/types';
+import { fetchAllTransactions } from '../../features/transactions/services/api';
+export type { User, UserRole } from '../../features/auth/types';
+export type { AppPage } from '../../features/auth/routes';
+export type { Transaction, QuantityType, ExpenseCategory } from '../../features/transactions/types';
 
 export interface Investor {
   id: string;
@@ -81,21 +60,6 @@ interface UserApiResponse {
   disabled?: boolean;
 }
 
-interface TransactionApiResponse {
-  id: string;
-  type: Transaction['type'];
-  product_name?: string | null;
-  expense_category?: ExpenseCategory | null;
-  expense_description?: string | null;
-  quantity?: number | null;
-  quantity_type?: QuantityType | null;
-  price_per_unit?: number | null;
-  total_amount: number;
-  person_name: string;
-  occurred_at: string;
-  notes?: string | null;
-}
-
 export interface AppDataState {
   users: User[];
   transactions: Transaction[];
@@ -126,7 +90,6 @@ interface AppContextType {
 
 const AppContext = createContext<AppContextType | undefined>(undefined);
 
-const DEFAULT_PAGE: AppPage = 'login';
 const USE_API = process.env.NEXT_PUBLIC_USE_API === 'true';
 
 const mapInvestorResponse = (inv: InvestorApiResponse): Investor => ({
@@ -139,28 +102,6 @@ const mapInvestorResponse = (inv: InvestorApiResponse): Investor => ({
   investments: [],
 });
 
-const mapTransactionResponse = (tx: TransactionApiResponse): Transaction => ({
-  id: tx.id,
-  type: tx.type,
-  productName: tx.product_name ?? undefined,
-  expenseCategory: tx.expense_category ?? undefined,
-  expenseDescription: tx.expense_description ?? undefined,
-  quantity: tx.quantity ?? undefined,
-  quantityType: tx.quantity_type ?? undefined,
-  pricePerUnit: tx.price_per_unit ?? undefined,
-  totalAmount: Number(tx.total_amount),
-  personName: tx.person_name,
-  date: new Date(tx.occurred_at),
-  notes: tx.notes ?? undefined,
-});
-
-const PAGE_ACCESS: Partial<Record<AppPage, UserRole[]>> = {
-  'add-entry': ['admin', 'partner'],
-  'add-investor': ['admin'],
-  'new-account': ['admin'],
-};
-
-const PUBLIC_PAGES: AppPage[] = ['login'];
 const LOG_PREFIX = '[AppContext]';
 
 const logInfo = (...args: unknown[]) => {
@@ -177,44 +118,23 @@ const logError = (...args: unknown[]) => {
 
 // Mock initial investors
 export function AppProvider({ children }: { children: ReactNode }) {
-  const [user, setUser] = useState<User | null>(null);
-  const [tokens, setTokens] = useState<AuthTokens | null>(() => (USE_API ? loadAuthTokens() : null));
+  const { user, login: authLogin, logout: authLogout, isBootstrapping: authBootstrapping, isAuthorized } = useAuth();
   const [data, setData] = useState<AppDataState>(() => ({
-    users: [],
+    users: USE_API ? [] : [...MOCK_USERS],
     transactions: [],
     investors: [],
   }));
   const [bootStatus, setBootStatus] = useState<{
-    auth: boolean;
     users: boolean;
     investors: boolean;
     transactions: boolean;
   }>({
-    auth: !USE_API,
     users: !USE_API,
     investors: !USE_API,
     transactions: !USE_API,
   });
   const [currentPage, setCurrentPageState] = useState<AppPage>(DEFAULT_PAGE);
-  const isBootstrapping = Object.values(bootStatus).some(status => !status);
-
-  const isAuthorized = useCallback(
-    (page: AppPage, roleOverride?: UserRole | null) => {
-      if (PUBLIC_PAGES.includes(page)) {
-        return true;
-      }
-      const role = roleOverride ?? user?.role ?? null;
-      if (!role) {
-        return false;
-      }
-      const allowedRoles = PAGE_ACCESS[page];
-      if (!allowedRoles) {
-        return true;
-      }
-      return allowedRoles.includes(role);
-    },
-    [user?.role]
-  );
+  const isBootstrapping = authBootstrapping || Object.values(bootStatus).some(status => !status);
 
   const setCurrentPage = useCallback(
     (nextPage: AppPage, options?: { role?: UserRole | null }) => {
@@ -239,69 +159,6 @@ export function AppProvider({ children }: { children: ReactNode }) {
       setCurrentPage('dashboard');
     }
   }, [user, currentPage, isAuthorized, setCurrentPage]);
-
-  const setCurrentPageRef = useRef(setCurrentPage);
-  useEffect(() => {
-    setCurrentPageRef.current = setCurrentPage;
-  }, [setCurrentPage]);
-
-  useEffect(() => {
-    if (typeof window === 'undefined') return;
-    const handleSessionExpired = (event: Event) => {
-      logWarn('Session expired; redirecting to login', event);
-      clearAuthTokens();
-      setTokens(null);
-      setUser(null);
-      setCurrentPageRef.current('login');
-    };
-    window.addEventListener('auth:session-expired', handleSessionExpired);
-    return () => {
-      window.removeEventListener('auth:session-expired', handleSessionExpired);
-    };
-  }, []);
-
-  useEffect(() => {
-    if (!USE_API) return;
-    let cancelled = false;
-
-    const hydrateUser = async () => {
-      const stored = tokens ?? loadAuthTokens();
-      logInfo('Bootstrapping start', { useApi: USE_API, hasStoredTokens: Boolean(tokens ?? loadAuthTokens()) });
-      if (!stored) {
-        logInfo('No stored tokens found; skipping /auth/me');
-        setBootStatus(prev => ({ ...prev, auth: true }));
-        return;
-      }
-      if (!tokens) {
-        setTokens(stored);
-      }
-      setBootStatus(prev => ({ ...prev, auth: false }));
-      try {
-        logInfo('Fetching /api/v1/auth/me');
-        const currentUser = await apiClient.get<User>('/api/v1/auth/me');
-        if (cancelled) return;
-        logInfo('Received /auth/me response', currentUser);
-        setUser(currentUser);
-        setCurrentPageRef.current('dashboard', { role: currentUser.role });
-      } catch (error) {
-        if (cancelled) return;
-        logError('Failed to fetch /auth/me; clearing tokens', error);
-        clearAuthTokens();
-        setTokens(null);
-        setUser(null);
-      } finally {
-        if (!cancelled) {
-          setBootStatus(prev => ({ ...prev, auth: true }));
-        }
-      }
-    };
-
-    hydrateUser();
-
-    return () => {
-      cancelled = true;
-    };
-  }, [tokens]);
 
   useEffect(() => {
     if (!USE_API || !user) return;
@@ -372,9 +229,8 @@ export function AppProvider({ children }: { children: ReactNode }) {
     const loadTransactions = async () => {
       logInfo('Loading transactions from API');
       try {
-        const response = await apiClient.get<TransactionApiResponse[]>('/api/v1/transactions');
+        const normalized = await fetchAllTransactions();
         if (cancelled) return;
-        const normalized = response.map(mapTransactionResponse);
         setData(prev => ({ ...prev, transactions: normalized }));
       } catch (error) {
         logWarn('Failed to load transactions', error);
@@ -390,56 +246,22 @@ export function AppProvider({ children }: { children: ReactNode }) {
     };
   }, [user]);
 
-  const login = useCallback(async (email: string, password: string): Promise<boolean> => {
-    if (USE_API) {
-      try {
-        logInfo('Attempting login via API', { email });
-        const response = await apiClient.post<{ access_token: string; refresh_token: string; expires_in: number; user: User }>(
-          '/api/v1/auth/login',
-          { email, password }
-        );
-        logInfo('Login succeeded', { user: response.user });
-        const nextTokens: AuthTokens = {
-          accessToken: response.access_token,
-          refreshToken: response.refresh_token,
-          expiresAt: Date.now() + response.expires_in * 1000,
-        };
-        saveAuthTokens(nextTokens);
-        setTokens(nextTokens);
-        setUser(response.user);
-        setCurrentPage('dashboard', { role: response.user.role });
-        return true;
-      } catch (err) {
-        logError('Login failed', err);
-        throw err;
+  const login = useCallback(
+    async (email: string, password: string): Promise<boolean> => {
+      const authenticatedUser = await authLogin(email, password);
+      if (!authenticatedUser) {
+        return false;
       }
-    }
-    const foundUser = data.users.find(u => u.email === email && !u.disabled);
-    if (!foundUser || password !== 'password') return false;
-
-    setUser(foundUser);
-    setCurrentPage('dashboard', { role: foundUser.role });
-    return true;
-  }, [data.users, setCurrentPage]);
+      setCurrentPage('dashboard', { role: authenticatedUser.role });
+      return true;
+    },
+    [authLogin, setCurrentPage]
+  );
 
   const logout = useCallback(async () => {
-    if (USE_API) {
-      logInfo('Logging out', { hasTokens: Boolean(tokens) });
-      const refreshToken = tokens?.refreshToken;
-      if (refreshToken) {
-        try {
-          await apiClient.post('/api/v1/auth/logout', { refresh_token: refreshToken });
-          logInfo('Logout API call succeeded');
-        } catch (err) {
-          logWarn('Logout API call failed', err);
-        }
-      }
-      clearAuthTokens();
-      setTokens(null);
-    }
-    setUser(null);
+    await authLogout();
     setCurrentPage('login');
-  }, [tokens, setCurrentPage]);
+  }, [authLogout, setCurrentPage]);
 
   const addUser = useCallback(async (userData: Omit<User, 'id'>) => {
     if (USE_API) {

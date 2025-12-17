@@ -2,7 +2,7 @@
 
 import { useCallback, useEffect, useState } from 'react';
 import { isWithinInterval, startOfDay, startOfWeek, startOfMonth } from 'date-fns';
-import { apiClient, ApiError } from '../lib/api';
+import { apiClient, ApiError } from '../shared/lib/api';
 import { useApp, Transaction, Investor } from '../app/context/AppContext';
 
 const USE_API = process.env.NEXT_PUBLIC_USE_API === 'true';

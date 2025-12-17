@@ -1,5 +1,6 @@
 "use client";
 import { AppProvider, useApp, AppPage } from './context/AppContext';
+import { AuthProvider, useAuth } from '../features/auth/context';
 import { LoginPage } from './pages/LoginPage';
 import { DashboardPage } from './pages/DashboardPage';
 import { AddEntryPage } from './pages/AddEntryPage';
@@ -21,7 +22,8 @@ const pageComponents: Record<AppPage, JSX.Element> = {
 };
 
 function AppRouter() {
-  const { currentPage, user, isAuthorized, isBootstrapping } = useApp();
+  const { currentPage, isBootstrapping } = useApp();
+  const { user, isAuthorized } = useAuth();
 
   // Redirect unauthenticated users to login
   if (!user) {
@@ -49,9 +51,11 @@ function AppRouter() {
 
 export default function App() {
   return (
-    <AppProvider>
-      <AppRouter />
-      <Toaster position="top-right" richColors />
-    </AppProvider>
+    <AuthProvider>
+      <AppProvider>
+        <AppRouter />
+        <Toaster position="top-right" richColors />
+      </AppProvider>
+    </AuthProvider>
   );
 }

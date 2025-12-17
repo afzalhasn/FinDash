@@ -1,17 +1,20 @@
-import React, { useState, useMemo, useCallback } from 'react';
-import { useApp, QuantityType, ExpenseCategory } from '../context/AppContext';
+import React, { useState, useMemo } from 'react';
+import { useApp } from '../context/AppContext';
 import { ArrowLeft, ShoppingCart, DollarSign, Receipt, Loader2 } from 'lucide-react';
 import { toast } from 'sonner';
-import { ApiError } from '../../lib/api';
-import { useAvailableProducts, useCreateTransaction, CreateTransactionPayload } from '../../hooks/useTransactions';
+import { ApiError } from '../../shared/lib/api';
+import type { QuantityType, ExpenseCategory, CreateTransactionPayload } from '../../features/transactions/types';
+import { useAvailableProducts, useCreateTransaction } from '../../features/transactions/hooks/useTransactions';
+import { useInventory } from '../../features/transactions/hooks/useInventory';
 
 type EntryType = 'buy' | 'sell' | 'expense';
 
 export function AddEntryPage() {
-  const { user, setCurrentPage, transactions } = useApp();
+  const { user, setCurrentPage } = useApp();
   const { data: availableProductsData = [], isLoading: productsLoading } = useAvailableProducts();
   const availableProducts = availableProductsData ?? [];
   const { mutateAsync: createTransaction, isPending: isSubmitting } = useCreateTransaction();
+  const { sellableProducts, lookupInventory } = useInventory();
   const [entryType, setEntryType] = useState<EntryType>('buy');
   
   // Buy/Sell fields
@@ -37,48 +40,8 @@ export function AddEntryPage() {
     ? Number(expenseAmount) || 0
     : (Number(quantity) || 0) * (Number(pricePerUnit) || 0);
 
-  const normalizeInventoryKey = useCallback((name: string, qtyType?: string | null) => {
-    return `${(name || '').trim().toLowerCase()}__${(qtyType || '').trim().toLowerCase()}`;
-  }, []);
-
-  const productInventory = useMemo(() => {
-    const map = new Map<string, { quantity: number; productName: string; quantityType: string | null }>();
-    transactions.forEach((t) => {
-      if (!t.productName || !t.quantity) return;
-      if (t.type === 'expense') return;
-      const key = normalizeInventoryKey(t.productName, t.quantityType ?? null);
-      const delta = t.type === 'buy' ? t.quantity : t.type === 'sell' ? -t.quantity : 0;
-      if (!delta) return;
-      const entry = map.get(key) ?? { quantity: 0, productName: t.productName, quantityType: t.quantityType ?? null };
-      entry.quantity += delta;
-      entry.productName = t.productName;
-      entry.quantityType = t.quantityType ?? null;
-      map.set(key, entry);
-    });
-    return map;
-  }, [normalizeInventoryKey, transactions]);
-
-  const lookupInventory = useCallback(
-    (name: string, qtyType?: string | null) => {
-      if (!name) return 0;
-      const entry = productInventory.get(normalizeInventoryKey(name, qtyType));
-      return entry?.quantity ?? 0;
-    },
-    [normalizeInventoryKey, productInventory]
-  );
-
-  const sellableProducts = useMemo(() => {
-    const names = new Set<string>();
-    productInventory.forEach(entry => {
-      if (entry.quantity > 0) {
-        names.add(entry.productName);
-      }
-    });
-    return Array.from(names);
-  }, [productInventory]);
-
   const sellProductOptions = sellableProducts.length > 0 ? sellableProducts : availableProducts;
-  const resolvedSellQuantityType = quantityType === 'custom' ? quantityType : quantityType;
+  const resolvedSellQuantityType = quantityType === 'custom' ? (customQuantityType || undefined) : quantityType;
   const availableSellQuantity = useMemo(() => {
     if (entryType !== 'sell' || !normalizedSelectedProduct) return 0;
     return lookupInventory(normalizedSelectedProduct, resolvedSellQuantityType);
