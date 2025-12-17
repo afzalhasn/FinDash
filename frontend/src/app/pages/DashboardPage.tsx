@@ -272,7 +272,7 @@ export function DashboardPage() {
               </div>
             </div>
             <p className="text-2xl">
-              {summaryLoading ? 'Loading…' : `$${summaryValues.totalCashIn.toLocaleString()}`}
+              {summaryLoading ? 'Loading…' : `₹${summaryValues.totalCashIn.toLocaleString()}`}
             </p>
             <p className="text-sm text-purple-100 mt-1">Investor Capital</p>
           </div>
@@ -286,7 +286,7 @@ export function DashboardPage() {
               </div>
             </div>
             <p className="text-gray-900 text-2xl">
-              {summaryLoading ? 'Loading…' : `$${summaryValues.purchases.toLocaleString()}`}
+              {summaryLoading ? 'Loading…' : `₹${summaryValues.purchases.toLocaleString()}`}
             </p>
             <p className="text-sm text-gray-500 mt-1">{filterLabel}</p>
           </div>
@@ -300,7 +300,7 @@ export function DashboardPage() {
               </div>
             </div>
             <p className="text-gray-900 text-2xl">
-              {summaryLoading ? 'Loading…' : `$${summaryValues.sales.toLocaleString()}`}
+              {summaryLoading ? 'Loading…' : `₹${summaryValues.sales.toLocaleString()}`}
             </p>
             <p className="text-sm text-gray-500 mt-1">{filterLabel}</p>
           </div>
@@ -314,7 +314,7 @@ export function DashboardPage() {
               </div>
             </div>
             <p className="text-gray-900 text-2xl">
-              {summaryLoading ? 'Loading…' : `$${summaryValues.expenses.toLocaleString()}`}
+              {summaryLoading ? 'Loading…' : `₹${summaryValues.expenses.toLocaleString()}`}
             </p>
             <p className="text-sm text-gray-500 mt-1">{filterLabel}</p>
           </div>
@@ -328,7 +328,7 @@ export function DashboardPage() {
               </div>
             </div>
             <p className={`text-2xl ${summaryValues.profit >= 0 ? 'text-green-600' : 'text-red-600'}`}>
-              {summaryLoading ? 'Loading…' : `$${Math.abs(summaryValues.profit).toLocaleString()}`}
+              {summaryLoading ? 'Loading…' : `₹${Math.abs(summaryValues.profit).toLocaleString()}`}
             </p>
             <p className="text-sm text-gray-500 mt-1">{filterLabel}</p>
           </div>
@@ -368,7 +368,7 @@ export function DashboardPage() {
                       <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
                     ))}
                   </Pie>
-                  <Tooltip formatter={(value: number) => `$${value.toLocaleString()}`} />
+                  <Tooltip formatter={(value: number) => `₹${value.toLocaleString()}`} />
                   <Legend />
                 </PieChart>
               </ResponsiveContainer>
@@ -399,7 +399,7 @@ export function DashboardPage() {
                       <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
                     ))}
                   </Pie>
-                  <Tooltip formatter={(value: number) => `$${value.toLocaleString()}`} />
+                  <Tooltip formatter={(value: number) => `₹${value.toLocaleString()}`} />
                 </PieChart>
               </ResponsiveContainer>
             ) : (
@@ -429,7 +429,7 @@ export function DashboardPage() {
                       <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
                     ))}
                   </Pie>
-                  <Tooltip formatter={(value: number) => `$${value.toLocaleString()}`} />
+                  <Tooltip formatter={(value: number) => `₹${value.toLocaleString()}`} />
                 </PieChart>
               </ResponsiveContainer>
             ) : (
@@ -515,16 +515,16 @@ export function DashboardPage() {
                   {insights.mostProfitable.product}
                 </p>
                 <p className="text-sm text-indigo-100 mt-1">
-                  Profit: ${Number(insights.mostProfitable.profit || 0).toLocaleString()}
+                  Profit: ₹{Number(insights.mostProfitable.profit || 0).toLocaleString()}
                 </p>
               </div>
               <div className="bg-white/10 rounded-lg p-4 backdrop-blur-sm">
-                <p className="text-indigo-100 mb-1">Least Profitable Product</p>
+                <p className="text-indigo-100 mb-1">Least Profitable Product {filterLabel}</p>
                 <p className="text-xl">
                   {insights.leastProfitable.product}
                 </p>
                 <p className="text-sm text-indigo-100 mt-1">
-                  {insights.leastProfitable.profit >= 0 ? 'Profit' : 'Loss'}: $
+                  {insights.leastProfitable.profit >= 0 ? 'Profit' : 'Loss'}: ₹
                   {Math.abs(Number(insights.leastProfitable.profit || 0)).toLocaleString()}
                 </p>
               </div>

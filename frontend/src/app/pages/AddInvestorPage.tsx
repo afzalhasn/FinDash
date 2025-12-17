@@ -344,13 +344,13 @@ export function AddInvestorPage() {
                           >
                             <td className="py-3 px-4 text-gray-900">{investor.name}</td>
                             <td className="py-3 px-4 text-right text-green-600">
-                              ${investor.totalInvested.toLocaleString()}
+                              ₹{investor.totalInvested.toLocaleString()}
                             </td>
                             <td className="py-3 px-4 text-right text-red-600">
-                              ${investor.totalWithdrawn.toLocaleString()}
+                              ₹{investor.totalWithdrawn.toLocaleString()}
                             </td>
                             <td className="py-3 px-4 text-right text-indigo-600">
-                              ${investor.netInvestment.toLocaleString()}
+                              ₹{investor.netInvestment.toLocaleString()}
                             </td>
                             <td className="py-3 px-4 text-right text-gray-600 text-sm">
                               {formatIST(investor.lastActivityDate)}

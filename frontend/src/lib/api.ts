@@ -1,5 +1,5 @@
 import type { RequestInit } from 'next/dist/server/web/spec-extension/request';
-import { getStoredAccessToken } from './auth';
+import { getStoredAccessToken, clearAuthTokens } from './auth';
 
 type HttpMethod = 'GET' | 'POST' | 'PUT' | 'PATCH' | 'DELETE';
 
@@ -65,6 +65,16 @@ export class ApiClient {
       } catch {
         payload = undefined;
       }
+
+      if (typeof window !== 'undefined' && (response.status === 401 || response.status === 403)) {
+        clearAuthTokens();
+        window.dispatchEvent(
+          new CustomEvent('auth:session-expired', {
+            detail: { status: response.status, message: payload?.detail ?? response.statusText },
+          })
+        );
+      }
+
       throw new ApiError(response.status, payload?.detail || response.statusText, payload);
     }
 

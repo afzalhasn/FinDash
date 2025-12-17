@@ -252,7 +252,7 @@ export function ProductInsightsPage() {
                 <YAxis />
                 <Tooltip
                   labelFormatter={value => new Date(value).toLocaleString()}
-                  formatter={(val: number) => `$${val.toLocaleString()}`}
+                  formatter={(val: number) => `₹${val.toLocaleString()}`}
                 />
                 <Legend />
                 <Line type="monotone" dataKey="sales" stroke="#16a34a" name="Sales" />

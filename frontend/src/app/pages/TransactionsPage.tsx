@@ -249,14 +249,9 @@ export function TransactionsPage() {
 
                         <div>
                           <p className="text-sm text-gray-500">Price/Unit</p>
-                          {/* <p className="text-gray-900">
-                            {typeof transaction.pricePerUnit === 'number'
-                              ? `$${transaction.pricePerUnit.toFixed(2)}`
-                              : '—'}
-                          </p> */}
                           <p className="text-gray-900">
                             {transaction.pricePerUnit !== null && transaction.pricePerUnit !== undefined
-                              ? `$${transaction.pricePerUnit.toLocaleString()}`
+                              ? `₹${transaction.pricePerUnit.toLocaleString()}`
                               : '—'}
                           </p>
                         </div>

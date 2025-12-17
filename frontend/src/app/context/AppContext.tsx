@@ -245,6 +245,21 @@ export function AppProvider({ children }: { children: ReactNode }) {
   }, [setCurrentPage]);
 
   useEffect(() => {
+    if (typeof window === 'undefined') return;
+    const handleSessionExpired = (event: Event) => {
+      logWarn('Session expired; redirecting to login', event);
+      clearAuthTokens();
+      setTokens(null);
+      setUser(null);
+      setCurrentPageRef.current('login');
+    };
+    window.addEventListener('auth:session-expired', handleSessionExpired);
+    return () => {
+      window.removeEventListener('auth:session-expired', handleSessionExpired);
+    };
+  }, []);
+
+  useEffect(() => {
     if (!USE_API) return;
     let cancelled = false;
 
