@@ -239,7 +239,7 @@ export function ProductInsightsPage() {
         </div>
 
         <div className="bg-white rounded-xl shadow-sm p-6 mt-6">
-          <h2 className="text-gray-900 mb-4">Sales vs Purchases vs Expenses ({intervalForTimeseries})</h2>
+          <h2 className="text-gray-900 mb-4">Sales vs Purchases vs Expenses</h2>
           {timeseriesLoading ? (
             <p className="text-gray-500">Loading trends...</p>
           ) : timeseriesData.length === 0 ? (

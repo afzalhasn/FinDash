@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from datetime import datetime
+from datetime import datetime, timedelta
 from decimal import Decimal
 
 from sqlalchemy.orm import Session
@@ -19,7 +19,7 @@ from app.models import (
     User,
     UserRole,
 )
-from app.core.timezone import ensure_ist
+from app.core.timezone import ensure_ist, now_ist
 
 
 def ist_datetime(value: str) -> datetime:
@@ -58,113 +58,84 @@ def seed_transactions(session: Session, users: dict[str, User]):
     def _recorded_by(email: str) -> User:
         return users[email]
 
-    entries = [
-        {
-            "type": TransactionType.buy,
-            "product_name": "Laptop",
-            "quantity": 5,
-            "quantity_type": QuantityType.unit,
-            "price_per_unit": Decimal("800"),
-            "total_amount": Decimal("4000"),
-            "person_name": "John Partner",
-            "occurred_at": ist_datetime("2024-12-09T00:00:00"),
-            "notes": "Bulk purchase",
-            "recorded_by": "partner@findash.com",
-        },
-        {
-            "type": TransactionType.sell,
-            "product_name": "Laptop",
-            "quantity": 3,
-            "quantity_type": QuantityType.unit,
-            "price_per_unit": Decimal("1200"),
-            "total_amount": Decimal("3600"),
-            "person_name": "Jane Staff",
-            "occurred_at": ist_datetime("2024-12-10T00:00:00"),
-            "recorded_by": "staff@findash.com",
-        },
-        {
-            "type": TransactionType.expense,
-            "expense_category": ExpenseCategory.rent,
-            "expense_description": "Office rent for December",
-            "total_amount": Decimal("1500"),
-            "person_name": "Admin User",
-            "occurred_at": ist_datetime("2024-12-01T00:00:00"),
-            "recorded_by": "admin@findash.com",
-        },
-        {
-            "type": TransactionType.buy,
-            "product_name": "Mouse",
-            "quantity": 20,
-            "quantity_type": QuantityType.unit,
-            "price_per_unit": Decimal("15"),
-            "total_amount": Decimal("300"),
-            "person_name": "John Partner",
-            "occurred_at": ist_datetime("2024-12-11T00:00:00"),
-            "recorded_by": "partner@findash.com",
-        },
-        {
-            "type": TransactionType.sell,
-            "product_name": "Mouse",
-            "quantity": 15,
-            "quantity_type": QuantityType.unit,
-            "price_per_unit": Decimal("25"),
-            "total_amount": Decimal("375"),
-            "person_name": "Jane Staff",
-            "occurred_at": ist_datetime("2024-12-12T00:00:00"),
-            "recorded_by": "staff@findash.com",
-        },
-        {
-            "type": TransactionType.expense,
-            "expense_category": ExpenseCategory.transport,
-            "expense_description": "Delivery charges",
-            "total_amount": Decimal("200"),
-            "person_name": "John Partner",
-            "occurred_at": ist_datetime("2024-12-12T00:00:00"),
-            "recorded_by": "partner@findash.com",
-        },
-        {
-            "type": TransactionType.buy,
-            "product_name": "Keyboard",
-            "quantity": 10,
-            "quantity_type": QuantityType.unit,
-            "price_per_unit": Decimal("50"),
-            "total_amount": Decimal("500"),
-            "person_name": "John Partner",
-            "occurred_at": ist_datetime("2024-12-12T12:00:00"),
-            "recorded_by": "partner@findash.com",
-        },
-        {
-            "type": TransactionType.sell,
-            "product_name": "Keyboard",
-            "quantity": 8,
-            "quantity_type": QuantityType.unit,
-            "price_per_unit": Decimal("80"),
-            "total_amount": Decimal("640"),
-            "person_name": "Jane Staff",
-            "occurred_at": ist_datetime("2024-12-13T00:00:00"),
-            "recorded_by": "staff@findash.com",
-        },
-        {
-            "type": TransactionType.sell,
-            "product_name": "Laptop",
-            "quantity": 2,
-            "quantity_type": QuantityType.unit,
-            "price_per_unit": Decimal("1200"),
-            "total_amount": Decimal("2400"),
-            "person_name": "John Partner",
-            "occurred_at": ist_datetime("2024-12-13T08:00:00"),
-            "recorded_by": "partner@findash.com",
-        },
-        {
-            "type": TransactionType.expense,
-            "expense_category": ExpenseCategory.salary,
-            "expense_description": "Staff salary",
-            "total_amount": Decimal("2000"),
-            "person_name": "Admin User",
-            "occurred_at": ist_datetime("2024-12-13T00:00:00"),
-            "recorded_by": "admin@findash.com",
-        },
+    catalog = [
+        {"name": "Laptop", "quantity_type": QuantityType.unit, "buy": Decimal("800"), "sell": Decimal("1200")},
+        {"name": "Mouse", "quantity_type": QuantityType.unit, "buy": Decimal("20"), "sell": Decimal("30")},
+        {"name": "Keyboard", "quantity_type": QuantityType.unit, "buy": Decimal("45"), "sell": Decimal("70")},
+        {"name": "Monitor", "quantity_type": QuantityType.unit, "buy": Decimal("220"), "sell": Decimal("320")},
+        {"name": "SSD", "quantity_type": QuantityType.unit, "buy": Decimal("60"), "sell": Decimal("95")},
     ]
+    expense_categories = [
+        ExpenseCategory.rent,
+        ExpenseCategory.transport,
+        ExpenseCategory.salary,
+        ExpenseCategory.other,
+    ]
+    people = [
+        ("Admin User", "admin@findash.com"),
+        ("John Partner", "partner@findash.com"),
+        ("Jane Staff", "staff@findash.com"),
+    ]
+
+    start_date = now_ist() - timedelta(days=60)
+    entries: list[dict] = []
+
+    for i in range(100):
+        day_offset = i % 60
+        occurred_at = start_date + timedelta(days=day_offset, hours=i % 12)
+        person_name, recorded_email = people[i % len(people)]
+
+        if i % 4 == 0:
+            category = expense_categories[i % len(expense_categories)]
+            base_amount = Decimal(150 + (i % 7) * 35)
+            entries.append(
+                {
+                    "type": TransactionType.expense,
+                    "expense_category": category,
+                    "expense_description": f"{category.value.title()} expense #{i + 1}",
+                    "total_amount": base_amount,
+                    "person_name": person_name,
+                    "occurred_at": occurred_at,
+                    "notes": "Auto-generated expense entry",
+                    "recorded_by": recorded_email,
+                }
+            )
+        elif i % 4 == 1:
+            product = catalog[i % len(catalog)]
+            quantity = (i % 5 + 1) * 2
+            price_per_unit = product["buy"]
+            entries.append(
+                {
+                    "type": TransactionType.buy,
+                    "product_name": product["name"],
+                    "quantity": quantity,
+                    "quantity_type": product["quantity_type"],
+                    "price_per_unit": price_per_unit,
+                    "total_amount": price_per_unit * Decimal(quantity),
+                    "person_name": person_name,
+                    "occurred_at": occurred_at,
+                    "notes": f"Restock {product['name']}",
+                    "recorded_by": recorded_email,
+                }
+            )
+        else:
+            product = catalog[i % len(catalog)]
+            quantity = (i % 3 + 1) * 2
+            price_per_unit = product["sell"]
+            entries.append(
+                {
+                    "type": TransactionType.sell,
+                    "product_name": product["name"],
+                    "quantity": quantity,
+                    "quantity_type": product["quantity_type"],
+                    "price_per_unit": price_per_unit,
+                    "total_amount": price_per_unit * Decimal(quantity),
+                    "person_name": person_name,
+                    "occurred_at": occurred_at,
+                    "notes": f"Sale of {product['name']}",
+                    "recorded_by": recorded_email,
+                }
+            )
 
     for entry in entries:
         recorded_by = _recorded_by(entry.pop("recorded_by"))

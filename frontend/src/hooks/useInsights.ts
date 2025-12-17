@@ -13,6 +13,12 @@ export interface ProductInsight {
   totalBought: number;
   netProfit: number;
 }
+interface ProductInsightApiResponse {
+  product_name: string;
+  total_sold: number;
+  total_bought: number;
+  net_profit: number;
+}
 
 export interface TimeSeriesPoint {
   bucket: string;
@@ -186,11 +192,19 @@ export function useProductInsights(range: { start: Date; end: Date }) {
       setState(prev => ({ ...prev, isLoading: true }));
       try {
         const params = new URLSearchParams({ start: startISO, end: endISO });
-        const response = await apiClient.get<ProductInsight[]>(
+        const response = await apiClient.get<ProductInsightApiResponse[]>(
           `/api/v1/insights/products?${params.toString()}`
         );
         if (!cancelled) {
-          setState({ data: response, isLoading: false });
+          setState({
+            data: response.map(row => ({
+              productName: row.product_name,
+              totalSold: row.total_sold,
+              totalBought: row.total_bought,
+              netProfit: row.net_profit,
+            })),
+            isLoading: false,
+          });
         }
       } catch (err) {
         if (!cancelled) {
@@ -219,8 +233,18 @@ export function useProductInsights(range: { start: Date; end: Date }) {
     }
     const params = new URLSearchParams({ start: startISO, end: endISO });
     apiClient
-      .get<ProductInsight[]>(`/api/v1/insights/products?${params.toString()}`)
-      .then(res => setState({ data: res, isLoading: false }))
+      .get<ProductInsightApiResponse[]>(`/api/v1/insights/products?${params.toString()}`)
+      .then(res =>
+        setState({
+          data: res.map(row => ({
+            productName: row.product_name,
+            totalSold: row.total_sold,
+            totalBought: row.total_bought,
+            netProfit: row.net_profit,
+          })),
+          isLoading: false,
+        })
+      )
       .catch(err =>
         setState({
           data: [],
