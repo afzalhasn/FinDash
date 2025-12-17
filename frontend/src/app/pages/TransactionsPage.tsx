@@ -10,16 +10,21 @@ export function TransactionsPage() {
   const [typeFilter, setTypeFilter] = useState<TransactionTypeFilter>('all');
   const [startDate, setStartDate] = useState('');
   const [endDate, setEndDate] = useState('');
+  const [page, setPage] = useState(1);
+  const [pageSize, setPageSize] = useState(10);
 
   const { data, isLoading, isError, error, refetch } = useTransactions({
     search: searchQuery || undefined,
     type: typeFilter,
     startDate: startDate || undefined,
     endDate: endDate || undefined,
+    page,
+    pageSize,
   });
 
   const transactions = data?.items ?? [];
   const totalTransactions = data?.total ?? 0;
+  const totalPages = Math.max(1, Math.ceil(totalTransactions / pageSize));
 
   return (
     <div className="min-h-screen bg-gray-50">
@@ -130,6 +135,7 @@ export function TransactionsPage() {
                 setTypeFilter('all');
                 setStartDate('');
                 setEndDate('');
+                setPage(1);
               }}
               className="mt-4 text-indigo-600 hover:text-indigo-700"
             >
@@ -139,17 +145,59 @@ export function TransactionsPage() {
         </div>
 
         {/* Results Count */}
-        <div className="mb-4">
-          {isLoading ? (
-            <div className="flex items-center gap-2 text-gray-500">
-              <Loader2 className="w-4 h-4 animate-spin" />
-              <span>Loading transactions...</span>
+        <div className="mb-4 flex flex-wrap items-center justify-between gap-4">
+          <div>
+            {isLoading ? (
+              <div className="flex items-center gap-2 text-gray-500">
+                <Loader2 className="w-4 h-4 animate-spin" />
+                <span>Loading transactions...</span>
+              </div>
+            ) : (
+              <p className="text-gray-600">
+                Showing {(page - 1) * pageSize + 1}-
+                {Math.min(page * pageSize, totalTransactions)} of {totalTransactions} transactions
+              </p>
+            )}
+          </div>
+          <div className="flex items-center gap-3 text-sm">
+            <label htmlFor="pageSize" className="text-gray-600">
+              Rows per page
+            </label>
+            <select
+              id="pageSize"
+              value={pageSize}
+              onChange={(e) => {
+                setPageSize(Number(e.target.value));
+                setPage(1);
+              }}
+              className="px-3 py-1 border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-indigo-500"
+            >
+              {[10, 20, 30, 40].map(size => (
+                <option key={size} value={size}>
+                  {size}
+                </option>
+              ))}
+            </select>
+            <div className="flex items-center gap-2">
+              <button
+                disabled={page === 1}
+                onClick={() => setPage(prev => Math.max(1, prev - 1))}
+                className="px-3 py-1 border border-gray-300 rounded disabled:opacity-50"
+              >
+                Previous
+              </button>
+              <span className="text-gray-600">
+                Page {page} of {totalPages}
+              </span>
+              <button
+                disabled={page >= totalPages}
+                onClick={() => setPage(prev => Math.min(totalPages, prev + 1))}
+                className="px-3 py-1 border border-gray-300 rounded disabled:opacity-50"
+              >
+                Next
+              </button>
             </div>
-          ) : (
-            <p className="text-gray-600">
-              Showing {transactions.length} of {totalTransactions} transactions
-            </p>
-          )}
+          </div>
         </div>
 
         {isError && (
