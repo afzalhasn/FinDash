@@ -4,6 +4,7 @@ from .transaction import Transaction, TransactionType, ExpenseCategory, Quantity
 from .investor import Investor
 from .investment_activity import InvestmentActivity, InvestmentActivityType
 from .audit_log import AuditLog
+from .revoked_token import RevokedToken
 
 __all__ = [
     "Base",
@@ -17,4 +18,5 @@ __all__ = [
     "InvestmentActivity",
     "InvestmentActivityType",
     "AuditLog",
+    "RevokedToken",
 ]

@@ -6,6 +6,7 @@ from fastapi import HTTPException, status
 from sqlalchemy.orm import Session
 
 from app.models import Investor, InvestmentActivity, InvestmentActivityType
+from app.core.timezone import ensure_ist, now_ist
 from app.repositories import InvestorRepository, InvestmentActivityRepository
 
 logger = logging.getLogger(__name__)
@@ -49,6 +50,9 @@ class InvestorService:
         else:
             investor.total_invested += Decimal(activity.amount)
             investor.net_investment += Decimal(activity.amount)
+
+        normalized_occurred_at = ensure_ist(activity.occurred_at) or now_ist()
+        investor.last_activity_at = normalized_occurred_at
 
         self.activities.add(activity)
         self.investors.flush()

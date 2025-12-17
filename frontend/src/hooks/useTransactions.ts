@@ -6,6 +6,7 @@ import { useApp, Transaction, QuantityType, ExpenseCategory } from '../app/conte
 import { istBoundaryDate, serializeISTBoundary } from '../lib/timezone';
 
 const USE_API = process.env.NEXT_PUBLIC_USE_API === 'true';
+const PRODUCTS_API_PATH = '/api/v1/transactions/products/available';
 const DEFAULT_PAGE_SIZE = 25;
 
 export type TransactionTypeFilter = Transaction['type'] | 'all';
@@ -50,6 +51,18 @@ type ExpenseTransactionPayload = BaseTransactionPayload & {
 };
 
 export type CreateTransactionPayload = TradeTransactionPayload | ExpenseTransactionPayload;
+type TransactionCreateRequest = {
+  type: Transaction['type'];
+  total_amount: number;
+  notes?: string;
+  occurred_at: string;
+  product_name?: string;
+  quantity?: number;
+  quantity_type?: QuantityType;
+  price_per_unit?: number;
+  expense_category?: ExpenseCategory;
+  expense_description?: string;
+};
 
 type NormalizedFilters = Omit<TransactionFilters, 'page' | 'pageSize'> & {
   page: number;
@@ -62,12 +75,26 @@ const normalizeFilters = (filters: TransactionFilters): NormalizedFilters => ({
   pageSize: filters.pageSize && filters.pageSize > 0 ? filters.pageSize : DEFAULT_PAGE_SIZE,
 });
 
+type TransactionApiResponse = {
+  id: string;
+  type: Transaction['type'];
+  product_name?: string | null;
+  expense_category?: ExpenseCategory | null;
+  expense_description?: string | null;
+  quantity?: number | null;
+  quantity_type?: QuantityType | null;
+  price_per_unit?: number | null;
+  total_amount: number;
+  notes?: string | null;
+  occurred_at: string;
+  person_name: string;
+};
+
 const buildQueryString = (filters: NormalizedFilters) => {
   const params = new URLSearchParams();
   if (filters.type && filters.type !== 'all') params.set('type', filters.type);
   if (filters.product) params.set('product', filters.product);
   if (filters.person) params.set('person', filters.person);
-  if (filters.search) params.set('search', filters.search);
   if (filters.startDate) {
     const serialized = serializeISTBoundary(filters.startDate);
     if (serialized) params.set('start', serialized);
@@ -76,15 +103,29 @@ const buildQueryString = (filters: NormalizedFilters) => {
     const serialized = serializeISTBoundary(filters.endDate, { endOfDay: true });
     if (serialized) params.set('end', serialized);
   }
-  params.set('page', filters.page.toString());
-  params.set('pageSize', filters.pageSize.toString());
   const queryString = params.toString();
   return queryString ? `?${queryString}` : '';
 };
 
-const fetchTransactions = async (filters: NormalizedFilters): Promise<TransactionsResponse> => {
+const mapTransactionResponse = (payload: TransactionApiResponse): Transaction => ({
+  id: payload.id,
+  type: payload.type,
+  productName: payload.product_name ?? undefined,
+  expenseCategory: payload.expense_category ?? undefined,
+  expenseDescription: payload.expense_description ?? undefined,
+  quantity: payload.quantity ?? undefined,
+  quantityType: payload.quantity_type ?? undefined,
+  pricePerUnit: payload.price_per_unit ?? undefined,
+  totalAmount: Number(payload.total_amount),
+  notes: payload.notes ?? undefined,
+  date: new Date(payload.occurred_at),
+  personName: payload.person_name,
+});
+
+const fetchTransactions = async (filters: NormalizedFilters): Promise<Transaction[]> => {
   const queryString = buildQueryString(filters);
-  return apiClient.get<TransactionsResponse>(`/api/v1/transactions${queryString}`);
+  const response = await apiClient.get<TransactionApiResponse[]>(`/api/v1/transactions${queryString}`);
+  return response.map(mapTransactionResponse);
 };
 
 const matchesSearch = (value: string | undefined, searchTerm: string) => {
@@ -152,7 +193,8 @@ export function useTransactions(filters: TransactionFilters = {}) {
   const { transactions } = useApp();
   const filtersKey = useMemo(() => JSON.stringify(filters), [filters]);
   const normalizedFilters = useMemo(() => normalizeFilters(filters), [filtersKey]);
-  const localSignature = useMemo(() => (!USE_API ? JSON.stringify(transactions) : ''), [transactions]);
+  const localSignature = useMemo(() => JSON.stringify(transactions), [transactions]);
+  const nonApiSignature = USE_API ? undefined : localSignature;
   const [reloadToken, setReloadToken] = useState(0);
 
   const [state, setState] = useState<{
@@ -166,9 +208,10 @@ export function useTransactions(filters: TransactionFilters = {}) {
     const load = async () => {
       setState(prev => ({ ...prev, isLoading: true }));
       try {
-        const data = USE_API
+        const sourceTransactions = USE_API
           ? await fetchTransactions(normalizedFilters)
-          : buildLocalResponse(transactions, normalizedFilters);
+          : transactions;
+        const data = buildLocalResponse(sourceTransactions, normalizedFilters);
         if (!cancelled) {
           setState({ data, isLoading: false });
         }
@@ -184,7 +227,7 @@ export function useTransactions(filters: TransactionFilters = {}) {
     return () => {
       cancelled = true;
     };
-  }, [localSignature, reloadToken, normalizedFilters]);
+  }, [nonApiSignature, reloadToken, normalizedFilters]);
 
   const refetch = useCallback(() => {
     setReloadToken(token => token + 1);
@@ -229,7 +272,7 @@ export function useAvailableProducts() {
     const load = async () => {
       setIsLoading(true);
       try {
-        const response = await apiClient.get<string[]>('/api/v1/products/available');
+        const response = await apiClient.get<string[]>(PRODUCTS_API_PATH);
         if (!cancelled) {
           setProducts(response);
           setError(undefined);
@@ -266,10 +309,34 @@ export function useAvailableProducts() {
 export function useCreateTransaction() {
   const [isPending, setIsPending] = useState(false);
 
+  const buildRequestPayload = (payload: CreateTransactionPayload): TransactionCreateRequest => {
+    const base: TransactionCreateRequest = {
+      type: payload.type,
+      total_amount: payload.totalAmount,
+      occurred_at: payload.occurredAt,
+      notes: payload.notes,
+    };
+    if (payload.type === 'expense') {
+      return {
+        ...base,
+        expense_category: payload.expenseCategory,
+        expense_description: payload.expenseDescription,
+      };
+    }
+    return {
+      ...base,
+      product_name: payload.productName,
+      quantity: payload.quantity,
+      quantity_type: payload.quantityType,
+      price_per_unit: payload.pricePerUnit,
+    };
+  };
+
   const mutateAsync = useCallback(async (payload: CreateTransactionPayload) => {
     setIsPending(true);
     try {
-      await apiClient.post('/api/v1/transactions', payload);
+      const requestPayload = buildRequestPayload(payload);
+      await apiClient.post('/api/v1/transactions', requestPayload);
       window.dispatchEvent(new CustomEvent('transactions:updated'));
     } finally {
       setIsPending(false);

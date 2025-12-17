@@ -1,6 +1,6 @@
 import uuid
 
-from fastapi import FastAPI, Depends, Request
+from fastapi import FastAPI, Request
 from sqlalchemy import text
 from fastapi.middleware.cors import CORSMiddleware
 
@@ -23,13 +23,15 @@ def create_app() -> FastAPI:
         description="Backend service for the FinDash Cash Flow Tracker",
     )
 
-    app.add_middleware(
-        CORSMiddleware,
-        allow_origins=["*"],
-        allow_credentials=True,
-        allow_methods=["*"],
-        allow_headers=["*"],
-    )
+    allowed_origins = [origin.strip() for origin in settings.allowed_origins.split(",") if origin.strip()]
+    allow_all = "*" in allowed_origins
+    cors_kwargs = {
+        "allow_origins": allowed_origins if not allow_all else ["*"],
+        "allow_credentials": not allow_all,
+        "allow_methods": ["*"],
+        "allow_headers": ["*"],
+    }
+    app.add_middleware(CORSMiddleware, **cors_kwargs)
 
     @app.middleware("http")
     async def add_correlation_id(request: Request, call_next):

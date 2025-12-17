@@ -28,6 +28,7 @@ class Settings(BaseSettings):
     jwt_algorithm: str = Field(default="HS256", env="JWT_ALGORITHM")
     access_token_expire_minutes: int = Field(default=60, env="ACCESS_TOKEN_EXPIRE_MINUTES")
     refresh_token_expire_days: int = Field(default=7, env="REFRESH_TOKEN_EXPIRE_DAYS")
+    allowed_origins: str = Field(default="http://localhost:3000", env="FINDASH_ALLOWED_ORIGINS")
 
 @lru_cache()
 def get_settings() -> Settings:

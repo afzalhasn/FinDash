@@ -7,6 +7,7 @@ from app.repositories import (
     InvestorRepository,
     InvestmentActivityRepository,
     AuditLogRepository,
+    RevokedTokenRepository,
 )
 from .auth import AuthService
 from .transactions import TransactionService
@@ -22,7 +23,11 @@ class ServiceFactory:
         self.settings = settings or get_settings()
 
     def auth_service(self) -> AuthService:
-        return AuthService(settings=self.settings, users=UserRepository(self.session))
+        return AuthService(
+            settings=self.settings,
+            users=UserRepository(self.session),
+            revoked_tokens=RevokedTokenRepository(self.session),
+        )
 
     def transaction_service(self) -> TransactionService:
         return TransactionService(transactions=TransactionRepository(self.session))

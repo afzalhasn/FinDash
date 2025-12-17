@@ -515,7 +515,7 @@ export function DashboardPage() {
                   {insights.mostProfitable.product}
                 </p>
                 <p className="text-sm text-indigo-100 mt-1">
-                  Profit: ${insights.mostProfitable.profit.toLocaleString()}
+                  Profit: ${Number(insights.mostProfitable.profit || 0).toLocaleString()}
                 </p>
               </div>
               <div className="bg-white/10 rounded-lg p-4 backdrop-blur-sm">
@@ -524,7 +524,8 @@ export function DashboardPage() {
                   {insights.leastProfitable.product}
                 </p>
                 <p className="text-sm text-indigo-100 mt-1">
-                  {insights.leastProfitable.profit >= 0 ? 'Profit' : 'Loss'}: ${Math.abs(insights.leastProfitable.profit).toLocaleString()}
+                  {insights.leastProfitable.profit >= 0 ? 'Profit' : 'Loss'}: $
+                  {Math.abs(Number(insights.leastProfitable.profit || 0)).toLocaleString()}
                 </p>
               </div>
             </div>

@@ -3,20 +3,6 @@ import { useApp } from '../context/AppContext';
 import { LogIn, Loader2 } from 'lucide-react';
 import { ApiError } from '../../lib/api';
 
-const LOG_PREFIX = '[LoginPage]';
-
-const logInfo = (...args: unknown[]) => {
-  console.log(LOG_PREFIX, ...args);
-};
-
-const logWarn = (...args: unknown[]) => {
-  console.warn(LOG_PREFIX, ...args);
-};
-
-const logError = (...args: unknown[]) => {
-  console.error(LOG_PREFIX, ...args);
-};
-
 export function LoginPage() {
   const { login } = useApp();
   const [email, setEmail] = useState('');
@@ -26,28 +12,20 @@ export function LoginPage() {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    logInfo('Submit clicked', { email }, { password });
     setError('');
     setIsLoading(true);
     try {
-      logInfo('Invoking login callback');
       const success = await login(email, password);
-      logInfo('Invoking login callback - returned', { success });
       if (!success) {
-        logWarn('Login callback returned false');
         setError('Invalid credentials. Please try again.');
-      } else {
-        logInfo('Login callback resolved successfully');
       }
     } catch (err) {
-      logError('Login threw an error', err);
       if (err instanceof ApiError) {
         setError(err.message || 'Unable to sign in. Please check your credentials.');
       } else {
         setError('Unexpected error while signing in. Please try again.');
       }
     } finally {
-      logInfo('Resetting loading state');
       setIsLoading(false);
     }
   };

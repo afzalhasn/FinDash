@@ -7,6 +7,7 @@ import React, {
   ReactNode,
   useEffect,
   useCallback,
+  useRef,
 } from 'react';
 import { apiClient } from '../../lib/api';
 import { saveAuthTokens, loadAuthTokens, clearAuthTokens, AuthTokens } from '../../lib/auth';
@@ -80,6 +81,21 @@ interface UserApiResponse {
   disabled?: boolean;
 }
 
+interface TransactionApiResponse {
+  id: string;
+  type: Transaction['type'];
+  product_name?: string | null;
+  expense_category?: ExpenseCategory | null;
+  expense_description?: string | null;
+  quantity?: number | null;
+  quantity_type?: QuantityType | null;
+  price_per_unit?: number | null;
+  total_amount: number;
+  person_name: string;
+  occurred_at: string;
+  notes?: string | null;
+}
+
 export interface AppDataState {
   users: User[];
   transactions: Transaction[];
@@ -122,6 +138,21 @@ const mapInvestorResponse = (inv: InvestorApiResponse): Investor => ({
   investments: [],
 });
 
+const mapTransactionResponse = (tx: TransactionApiResponse): Transaction => ({
+  id: tx.id,
+  type: tx.type,
+  productName: tx.product_name ?? undefined,
+  expenseCategory: tx.expense_category ?? undefined,
+  expenseDescription: tx.expense_description ?? undefined,
+  quantity: tx.quantity ?? undefined,
+  quantityType: tx.quantity_type ?? undefined,
+  pricePerUnit: tx.price_per_unit ?? undefined,
+  totalAmount: Number(tx.total_amount),
+  personName: tx.person_name,
+  date: new Date(tx.occurred_at),
+  notes: tx.notes ?? undefined,
+});
+
 const PAGE_ACCESS: Partial<Record<AppPage, UserRole[]>> = {
   'add-entry': ['admin', 'partner'],
   'add-investor': ['admin'],
@@ -152,10 +183,16 @@ export function AppProvider({ children }: { children: ReactNode }) {
     transactions: [],
     investors: [],
   }));
-  const [bootStatus, setBootStatus] = useState<{ auth: boolean; users: boolean; investors: boolean }>({
+  const [bootStatus, setBootStatus] = useState<{
+    auth: boolean;
+    users: boolean;
+    investors: boolean;
+    transactions: boolean;
+  }>({
     auth: !USE_API,
     users: !USE_API,
     investors: !USE_API,
+    transactions: !USE_API,
   });
   const [currentPage, setCurrentPageState] = useState<AppPage>(DEFAULT_PAGE);
   const isBootstrapping = Object.values(bootStatus).some(status => !status);
@@ -202,6 +239,11 @@ export function AppProvider({ children }: { children: ReactNode }) {
     }
   }, [user, currentPage, isAuthorized, setCurrentPage]);
 
+  const setCurrentPageRef = useRef(setCurrentPage);
+  useEffect(() => {
+    setCurrentPageRef.current = setCurrentPage;
+  }, [setCurrentPage]);
+
   useEffect(() => {
     if (!USE_API) return;
     let cancelled = false;
@@ -224,7 +266,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
         if (cancelled) return;
         logInfo('Received /auth/me response', currentUser);
         setUser(currentUser);
-        setCurrentPage('dashboard', { role: currentUser.role });
+        setCurrentPageRef.current('dashboard', { role: currentUser.role });
       } catch (error) {
         if (cancelled) return;
         logError('Failed to fetch /auth/me; clearing tokens', error);
@@ -243,10 +285,14 @@ export function AppProvider({ children }: { children: ReactNode }) {
     return () => {
       cancelled = true;
     };
-  }, [tokens, setCurrentPage]);
+  }, [tokens]);
 
   useEffect(() => {
     if (!USE_API || !user) return;
+    if (user.role !== 'admin') {
+      setBootStatus(prev => ({ ...prev, investors: true }));
+      return;
+    }
     let cancelled = false;
     setBootStatus(prev => ({ ...prev, investors: false }));
     const loadInvestors = async () => {
@@ -273,6 +319,10 @@ export function AppProvider({ children }: { children: ReactNode }) {
 
   useEffect(() => {
     if (!USE_API || !user) return;
+    if (user.role !== 'admin') {
+      setBootStatus(prev => ({ ...prev, users: true }));
+      return;
+    }
     let cancelled = false;
     setBootStatus(prev => ({ ...prev, users: false }));
     const loadUsers = async () => {
@@ -299,19 +349,44 @@ export function AppProvider({ children }: { children: ReactNode }) {
     };
   }, [user]);
 
+  useEffect(() => {
+    if (!USE_API || !user) return;
+    let cancelled = false;
+    setBootStatus(prev => ({ ...prev, transactions: false }));
+    const loadTransactions = async () => {
+      logInfo('Loading transactions from API');
+      try {
+        const response = await apiClient.get<TransactionApiResponse[]>('/api/v1/transactions');
+        if (cancelled) return;
+        const normalized = response.map(mapTransactionResponse);
+        setData(prev => ({ ...prev, transactions: normalized }));
+      } catch (error) {
+        logWarn('Failed to load transactions', error);
+      } finally {
+        if (!cancelled) {
+          setBootStatus(prev => ({ ...prev, transactions: true }));
+        }
+      }
+    };
+    loadTransactions();
+    return () => {
+      cancelled = true;
+    };
+  }, [user]);
+
   const login = useCallback(async (email: string, password: string): Promise<boolean> => {
     if (USE_API) {
       try {
         logInfo('Attempting login via API', { email });
-        const response = await apiClient.post<{ accessToken: string; refreshToken: string; expiresIn: number; user: User }>(
+        const response = await apiClient.post<{ access_token: string; refresh_token: string; expires_in: number; user: User }>(
           '/api/v1/auth/login',
           { email, password }
         );
         logInfo('Login succeeded', { user: response.user });
         const nextTokens: AuthTokens = {
-          accessToken: response.accessToken,
-          refreshToken: response.refreshToken,
-          expiresAt: Date.now() + response.expiresIn * 1000,
+          accessToken: response.access_token,
+          refreshToken: response.refresh_token,
+          expiresAt: Date.now() + response.expires_in * 1000,
         };
         saveAuthTokens(nextTokens);
         setTokens(nextTokens);
@@ -334,11 +409,14 @@ export function AppProvider({ children }: { children: ReactNode }) {
   const logout = useCallback(async () => {
     if (USE_API) {
       logInfo('Logging out', { hasTokens: Boolean(tokens) });
-      try {
-        await apiClient.post('/api/v1/auth/logout', { refreshToken: tokens?.refreshToken });
-        logInfo('Logout API call succeeded');
-      } catch (err) {
-        logWarn('Logout API call failed', err);
+      const refreshToken = tokens?.refreshToken;
+      if (refreshToken) {
+        try {
+          await apiClient.post('/api/v1/auth/logout', { refresh_token: refreshToken });
+          logInfo('Logout API call succeeded');
+        } catch (err) {
+          logWarn('Logout API call failed', err);
+        }
       }
       clearAuthTokens();
       setTokens(null);
@@ -398,9 +476,12 @@ export function AppProvider({ children }: { children: ReactNode }) {
 
   const disableUser = useCallback(async (userId: string) => {
     if (USE_API) {
-      logInfo('Disabling user via API', { userId });
+      const targetUser = data.users.find(u => u.id === userId);
+      const role = targetUser?.role ?? 'staff';
+      logInfo('Disabling user via API', { userId, role });
       try {
         const response = await apiClient.patch<UserApiResponse>(`/api/v1/users/${userId}/role`, {
+          role,
           disabled: true,
         });
         logInfo('User disabled', response);
@@ -419,7 +500,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
       users: prev.users.map(u => (u.id === userId ? { ...u, disabled: true } : u)),
     }));
     return true;
-  }, []);
+  }, [data.users]);
 
   const getAvailableProducts = useCallback((): string[] => {
     const products = new Set<string>();
@@ -498,15 +579,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
         inv.id === mapped.id
           ? {
               ...mapped,
-              investments: [
-                ...inv.investments,
-                {
-                  id: Date.now().toString(),
-                  type: mapped.netInvestment > inv.netInvestment ? 'investment' : 'withdrawal',
-                  amount: Math.abs(mapped.netInvestment - inv.netInvestment),
-                  date: mapped.lastActivityDate,
-                },
-              ],
+              investments: inv.investments,
             }
           : inv
       ),
