@@ -114,6 +114,7 @@ interface AppContextType {
   addUser: (user: Omit<User, 'id'>) => Promise<boolean>;
   updateUserRole: (userId: string, role: UserRole) => Promise<boolean>;
   disableUser: (userId: string) => Promise<boolean>;
+  toggleUserStatus: (userId: string, disabled: boolean) => Promise<boolean>;
   getAvailableProducts: () => string[];
   addInvestor: (name: string) => Promise<boolean>;
   addInvestment: (investorId: string, amount: number, notes?: string) => Promise<boolean>;
@@ -489,33 +490,46 @@ export function AppProvider({ children }: { children: ReactNode }) {
     return true;
   }, []);
 
-  const disableUser = useCallback(async (userId: string) => {
-    if (USE_API) {
-      const targetUser = data.users.find(u => u.id === userId);
-      const role = targetUser?.role ?? 'staff';
-      logInfo('Disabling user via API', { userId, role });
-      try {
-        const response = await apiClient.patch<UserApiResponse>(`/api/v1/users/${userId}/role`, {
-          role,
-          disabled: true,
-        });
-        logInfo('User disabled', response);
-        setData(prev => ({
-          ...prev,
-          users: prev.users.map(u => (u.id === response.id ? { ...u, role: response.role, disabled: response.disabled } : u)),
-        }));
-        return true;
-      } catch (error) {
-        logError('Failed to disable user', error);
-        return false;
+  const toggleUserStatus = useCallback(
+    async (userId: string, disabled: boolean) => {
+      if (USE_API) {
+        const target = data.users.find(u => u.id === userId);
+        const role = target?.role ?? 'staff';
+        logInfo('Toggling user status via API', { userId, disabled, role });
+        try {
+          const response = await apiClient.patch<UserApiResponse>(`/api/v1/users/${userId}/role`, {
+            role,
+            disabled,
+          });
+          setData(prev => ({
+            ...prev,
+            users: prev.users.map(u =>
+              u.id === response.id ? { ...u, role: response.role, disabled: response.disabled } : u
+            ),
+          }));
+          return true;
+        } catch (error) {
+          logError('Failed to toggle user status', error);
+          throw error;
+        }
       }
+      setData(prev => ({
+        ...prev,
+        users: prev.users.map(u => (u.id === userId ? { ...u, disabled } : u)),
+      }));
+      return true;
+    },
+    [data.users]
+  );
+
+  const disableUser = useCallback(async (userId: string) => {
+    try {
+      await toggleUserStatus(userId, true);
+      return true;
+    } catch {
+      return false;
     }
-    setData(prev => ({
-      ...prev,
-      users: prev.users.map(u => (u.id === userId ? { ...u, disabled: true } : u)),
-    }));
-    return true;
-  }, [data.users]);
+  }, [toggleUserStatus]);
 
   const getAvailableProducts = useCallback((): string[] => {
     const products = new Set<string>();
@@ -657,9 +671,11 @@ export function AppProvider({ children }: { children: ReactNode }) {
         users,
         login,
         logout,
-        addUser,
-        updateUserRole,
-        disableUser,
+      addUser,
+      updateUserRole,
+      disableUser,
+      toggleUserStatus,
+      toggleUserStatus,
         transactions,
         getAvailableProducts,
         investors,

@@ -80,6 +80,18 @@ def seed_transactions(session: Session, users: dict[str, User]):
     start_date = now_ist() - timedelta(days=60)
     entries: list[dict] = []
 
+    inventory: dict[str, Decimal] = {}
+
+    def inventory_key(name: str, qty_type: str | None) -> str:
+        return f"{name.lower()}__{(qty_type or '').lower()}"
+
+    def increment_inventory(name: str, qty_type: str | None, amount: Decimal):
+        key = inventory_key(name, qty_type)
+        inventory[key] = inventory.get(key, Decimal("0")) + amount
+
+    def get_inventory(name: str, qty_type: str | None) -> Decimal:
+        return inventory.get(inventory_key(name, qty_type), Decimal("0"))
+
     for i in range(100):
         day_offset = i % 60
         occurred_at = start_date + timedelta(days=day_offset, hours=i % 12)
@@ -104,6 +116,7 @@ def seed_transactions(session: Session, users: dict[str, User]):
             product = catalog[i % len(catalog)]
             quantity = (i % 5 + 1) * 2
             price_per_unit = product["buy"]
+            increment_inventory(product["name"], product["quantity_type"], Decimal(quantity))
             entries.append(
                 {
                     "type": TransactionType.buy,
@@ -122,14 +135,35 @@ def seed_transactions(session: Session, users: dict[str, User]):
             product = catalog[i % len(catalog)]
             quantity = (i % 3 + 1) * 2
             price_per_unit = product["sell"]
+            available_qty = get_inventory(product["name"], product["quantity_type"])
+            if available_qty <= 0:
+                # Restock instead
+                increment_inventory(product["name"], product["quantity_type"], Decimal(quantity))
+                entries.append(
+                    {
+                        "type": TransactionType.buy,
+                        "product_name": product["name"],
+                        "quantity": quantity,
+                        "quantity_type": product["quantity_type"],
+                        "price_per_unit": product["buy"],
+                        "total_amount": product["buy"] * Decimal(quantity),
+                        "person_name": person_name,
+                        "occurred_at": occurred_at,
+                        "notes": f"Auto restock for {product['name']}",
+                        "recorded_by": recorded_email,
+                    }
+                )
+                continue
+            sell_quantity = min(Decimal(quantity), available_qty)
+            increment_inventory(product["name"], product["quantity_type"], -sell_quantity)
             entries.append(
                 {
                     "type": TransactionType.sell,
                     "product_name": product["name"],
-                    "quantity": quantity,
+                    "quantity": float(sell_quantity),
                     "quantity_type": product["quantity_type"],
                     "price_per_unit": price_per_unit,
-                    "total_amount": price_per_unit * Decimal(quantity),
+                    "total_amount": price_per_unit * sell_quantity,
                     "person_name": person_name,
                     "occurred_at": occurred_at,
                     "notes": f"Sale of {product['name']}",

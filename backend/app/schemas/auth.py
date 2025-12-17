@@ -19,6 +19,7 @@ class UserOut(BaseModel):
     name: str
     email: EmailStr
     role: str
+    disabled: bool
 
     class Config:
         from_attributes = True

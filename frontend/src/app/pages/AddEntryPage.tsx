@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useMemo, useCallback } from 'react';
 import { useApp, QuantityType, ExpenseCategory } from '../context/AppContext';
 import { ArrowLeft, ShoppingCart, DollarSign, Receipt, Loader2 } from 'lucide-react';
 import { toast } from 'sonner';
@@ -8,7 +8,7 @@ import { useAvailableProducts, useCreateTransaction, CreateTransactionPayload } 
 type EntryType = 'buy' | 'sell' | 'expense';
 
 export function AddEntryPage() {
-  const { user, setCurrentPage } = useApp();
+  const { user, setCurrentPage, transactions } = useApp();
   const { data: availableProductsData = [], isLoading: productsLoading } = useAvailableProducts();
   const availableProducts = availableProductsData ?? [];
   const { mutateAsync: createTransaction, isPending: isSubmitting } = useCreateTransaction();
@@ -31,26 +31,79 @@ export function AddEntryPage() {
   const [date, setDate] = useState(new Date().toISOString().split('T')[0]);
   const [time, setTime] = useState(new Date().toTimeString().split(' ')[0].slice(0, 5));
   const [notes, setNotes] = useState('');
+  const normalizedSelectedProduct = productName.trim();
 
   const totalAmount = entryType === 'expense' 
     ? Number(expenseAmount) || 0
     : (Number(quantity) || 0) * (Number(pricePerUnit) || 0);
 
+  const normalizeInventoryKey = useCallback((name: string, qtyType?: string | null) => {
+    return `${(name || '').trim().toLowerCase()}__${(qtyType || '').trim().toLowerCase()}`;
+  }, []);
+
+  const productInventory = useMemo(() => {
+    const map = new Map<string, { quantity: number; productName: string; quantityType: string | null }>();
+    transactions.forEach((t) => {
+      if (!t.productName || !t.quantity) return;
+      if (t.type === 'expense') return;
+      const key = normalizeInventoryKey(t.productName, t.quantityType ?? null);
+      const delta = t.type === 'buy' ? t.quantity : t.type === 'sell' ? -t.quantity : 0;
+      if (!delta) return;
+      const entry = map.get(key) ?? { quantity: 0, productName: t.productName, quantityType: t.quantityType ?? null };
+      entry.quantity += delta;
+      entry.productName = t.productName;
+      entry.quantityType = t.quantityType ?? null;
+      map.set(key, entry);
+    });
+    return map;
+  }, [normalizeInventoryKey, transactions]);
+
+  const lookupInventory = useCallback(
+    (name: string, qtyType?: string | null) => {
+      if (!name) return 0;
+      const entry = productInventory.get(normalizeInventoryKey(name, qtyType));
+      return entry?.quantity ?? 0;
+    },
+    [normalizeInventoryKey, productInventory]
+  );
+
+  const sellableProducts = useMemo(() => {
+    const names = new Set<string>();
+    productInventory.forEach(entry => {
+      if (entry.quantity > 0) {
+        names.add(entry.productName);
+      }
+    });
+    return Array.from(names);
+  }, [productInventory]);
+
+  const sellProductOptions = sellableProducts.length > 0 ? sellableProducts : availableProducts;
+  const resolvedSellQuantityType = quantityType === 'custom' ? quantityType : quantityType;
+  const availableSellQuantity = useMemo(() => {
+    if (entryType !== 'sell' || !normalizedSelectedProduct) return 0;
+    return lookupInventory(normalizedSelectedProduct, resolvedSellQuantityType);
+  }, [entryType, lookupInventory, normalizedSelectedProduct, resolvedSellQuantityType]);
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+
+    const normalizedProductName = productName.trim();
 
     if (entryType === 'sell') {
       if (productsLoading) {
         toast.info('Loading available products. Please wait a moment.');
         return;
       }
-      if (!productName || !availableProducts.includes(productName)) {
+      if (
+        !normalizedProductName ||
+        !sellProductOptions.some(option => option.trim().toLowerCase() === normalizedProductName.toLowerCase())
+      ) {
         toast.error('Cannot sell a product that hasn\'t been purchased yet!');
         return;
       }
     }
 
-    if (entryType !== 'expense' && !productName) {
+    if (entryType !== 'expense' && !normalizedProductName) {
       toast.error('Please select or enter a product name.');
       return;
     }
@@ -70,11 +123,31 @@ export function AddEntryPage() {
         occurredAt,
       };
     } else {
+      if (quantityType === 'custom' && !customQuantityType.trim()) {
+        toast.error('Please specify a custom quantity type.');
+        return;
+      }
       const finalQuantityType = quantityType === 'custom' ? (customQuantityType as QuantityType) : quantityType;
+      const numericQuantity = Number(quantity);
+      if (!Number.isFinite(numericQuantity) || numericQuantity <= 0) {
+        toast.error('Please enter a valid quantity greater than zero.');
+        return;
+      }
+      if (entryType === 'sell') {
+        const availableQty = lookupInventory(productName, finalQuantityType);
+        if (availableQty <= 0) {
+          toast.error('No inventory available for the selected product and quantity type.');
+          return;
+        }
+        if (numericQuantity > availableQty) {
+          toast.error(`Only ${availableQty.toFixed(2)} units are available to sell.`);
+          return;
+        }
+      }
       payload = {
         type: entryType,
-        productName,
-        quantity: Number(quantity),
+        productName: normalizedProductName,
+        quantity: numericQuantity,
         quantityType: finalQuantityType,
         pricePerUnit: Number(pricePerUnit),
         totalAmount,
@@ -184,7 +257,7 @@ export function AddEntryPage() {
                       <Loader2 className="w-4 h-4 animate-spin" />
                       <span>Loading products available for sale...</span>
                     </div>
-                  ) : availableProducts.length === 0 ? (
+                  ) : sellProductOptions.length === 0 ? (
                     <div className="p-4 bg-yellow-50 border border-yellow-200 rounded-lg">
                       <p className="text-yellow-800">No products available for sale. Please add purchases first.</p>
                     </div>
@@ -198,7 +271,7 @@ export function AddEntryPage() {
                       disabled={isSubmitting}
                     >
                       <option value="">Select a product</option>
-                      {availableProducts.map((product) => (
+                      {sellProductOptions.map((product) => (
                         <option key={product} value={product}>{product}</option>
                       ))}
                     </select>
@@ -259,6 +332,11 @@ export function AddEntryPage() {
                     placeholder="0"
                     required
                   />
+                  {entryType === 'sell' && productName && (
+                    <p className="text-sm text-gray-500 mt-2">
+                      Available: {availableSellQuantity.toFixed(2)} {quantityType === 'custom' ? '' : quantityType}
+                    </p>
+                  )}
                 </div>
 
                 <div>
@@ -436,7 +514,7 @@ export function AddEntryPage() {
             <button
               type="submit"
               className="flex-1 bg-indigo-600 text-white py-3 rounded-lg hover:bg-indigo-700 transition-colors flex items-center justify-center gap-2 disabled:opacity-60 disabled:cursor-not-allowed"
-              disabled={isSubmitting || (entryType === 'sell' && (productsLoading || availableProducts.length === 0))}
+              disabled={isSubmitting || (entryType === 'sell' && (productsLoading || sellProductOptions.length === 0))}
             >
               {isSubmitting && <Loader2 className="w-4 h-4 animate-spin" />}
               {isSubmitting ? 'Saving...' : 'Save Entry'}

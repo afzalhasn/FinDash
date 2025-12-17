@@ -32,15 +32,55 @@ class TransactionService:
             end=ensure_ist(end),
         )
 
+    def _validate_sell_transaction(
+        self,
+        payload: TransactionCreate,
+        *,
+        exclude_transaction_id: str | None = None,
+    ) -> None:
+        if not payload.product_name:
+            raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Product name is required for sales")
+        if payload.quantity_type is None:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="Quantity type is required for sales",
+            )
+        if payload.quantity is None or payload.quantity <= 0:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="Quantity must be greater than zero",
+            )
+
+        available_qty = self.transactions.get_available_quantity(
+            payload.product_name,
+            payload.quantity_type,
+            exclude_transaction_id=exclude_transaction_id,
+        )
+        if available_qty <= 0:
+            logger.warning(
+                "Sell transaction rejected - no inventory product=%s qty_type=%s",
+                payload.product_name,
+                payload.quantity_type,
+            )
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="Cannot sell product with no matching inventory",
+            )
+        if payload.quantity > available_qty:
+            logger.warning(
+                "Sell transaction rejected - insufficient inventory product=%s requested=%s available=%s",
+                payload.product_name,
+                payload.quantity,
+                available_qty,
+            )
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail=f"Only {available_qty:.2f} units available for sale",
+            )
+
     def create_transaction(self, payload: TransactionCreate, user: User) -> Transaction:
         if payload.type == TransactionType.sell:
-            available = self.transactions.get_available_products()
-            if payload.product_name not in available:
-                logger.warning("Sell transaction rejected - product not in inventory product=%s", payload.product_name)
-                raise HTTPException(
-                    status_code=status.HTTP_400_BAD_REQUEST,
-                    detail="Cannot sell product with no inventory",
-                )
+            self._validate_sell_transaction(payload)
 
         transaction = Transaction(
             **payload.dict(),
@@ -58,13 +98,7 @@ class TransactionService:
             raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Transaction not found")
 
         if payload.type == TransactionType.sell:
-            available = self.transactions.get_available_products()
-            if payload.product_name not in available:
-                logger.warning("Sell update rejected product=%s", payload.product_name)
-                raise HTTPException(
-                    status_code=status.HTTP_400_BAD_REQUEST,
-                    detail="Cannot sell product with no inventory",
-                )
+            self._validate_sell_transaction(payload, exclude_transaction_id=str(transaction.id))
 
         for field, value in payload.dict().items():
             setattr(transaction, field, value)

@@ -1,10 +1,10 @@
-import React, { useState } from 'react';
+import React, { useState, useMemo } from 'react';
 import { useApp, UserRole } from '../context/AppContext';
-import { ArrowLeft, UserPlus, Shield, Eye, EyeOff } from 'lucide-react';
+import { ArrowLeft, UserPlus, Shield, Eye, EyeOff, ToggleLeft, ToggleRight } from 'lucide-react';
 import { toast } from 'sonner';
 
 export function NewAccountPage() {
-  const { users, addUser, updateUserRole, disableUser, setCurrentPage } = useApp();
+  const { user: currentUser, users, addUser, updateUserRole, toggleUserStatus, setCurrentPage } = useApp();
   const [showForm, setShowForm] = useState(false);
   const [newUserName, setNewUserName] = useState('');
   const [newUserEmail, setNewUserEmail] = useState('');
@@ -41,15 +41,6 @@ export function NewAccountPage() {
       toast.success('User role updated successfully!');
     } else {
       toast.error('Failed to update role. Please try again.');
-    }
-  };
-
-  const handleDisableUser = async (userId: string, userName: string) => {
-    const success = await disableUser(userId);
-    if (success) {
-      toast.success(`User "${userName}" has been disabled.`);
-    } else {
-      toast.error('Failed to disable user. Please try again.');
     }
   };
 
@@ -222,53 +213,74 @@ export function NewAccountPage() {
                 </tr>
               </thead>
               <tbody>
-                {users.map((user) => (
-                  <tr key={user.id} className="border-b border-gray-100 hover:bg-gray-50">
-                    <td className="py-3 px-4">
-                      <p className="text-gray-900">{user.name}</p>
-                    </td>
-                    <td className="py-3 px-4 text-gray-600">{user.email}</td>
-                    <td className="py-3 px-4">
-                      <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs ${getRoleBadgeColor(user.role)}`}>
-                        {user.role.charAt(0).toUpperCase() + user.role.slice(1)}
-                      </span>
-                    </td>
-                    <td className="py-3 px-4">
-                      {user.disabled ? (
-                        <span className="inline-flex items-center gap-1 text-red-600 text-sm">
-                          <EyeOff className="w-4 h-4" />
-                          Disabled
+                {users.map((user) => {
+                  const isCurrentUser = currentUser?.email === user.email;
+                  const statusLabel = user.disabled ? 'Inactive' : 'Active';
+                  const statusColor = user.disabled ? 'text-red-600' : 'text-green-600';
+                  return (
+                    <tr key={user.id} className="border-b border-gray-100 hover:bg-gray-50">
+                      <td className="py-3 px-4">
+                        <p className="text-gray-900">{user.name}</p>
+                      </td>
+                      <td className="py-3 px-4 text-gray-600">{user.email}</td>
+                      <td className="py-3 px-4">
+                        <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs ${getRoleBadgeColor(user.role)}`}>
+                          {user.role.charAt(0).toUpperCase() + user.role.slice(1)}
                         </span>
-                      ) : (
-                        <span className="inline-flex items-center gap-1 text-green-600 text-sm">
-                          <Eye className="w-4 h-4" />
-                          Active
+                      </td>
+                      <td className="py-3 px-4">
+                        <span className={`inline-flex items-center gap-1 text-sm ${statusColor}`}>
+                          {user.disabled ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                          {statusLabel}
                         </span>
-                      )}
-                    </td>
-                    <td className="py-3 px-4">
-                      {!user.disabled && (
-                        <div className="flex gap-2">
+                      </td>
+                      <td className="py-3 px-4">
+                        <div className="flex flex-wrap items-center gap-2">
                           <select
                             value={user.role}
                             onChange={(e) => handleRoleChange(user.id, e.target.value as UserRole)}
                             className="px-3 py-1 border border-gray-300 rounded text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                            disabled={isCurrentUser}
                           >
                             <option value="staff">Staff</option>
                             <option value="partner">Partner</option>
                             <option value="admin">Admin</option>
                           </select>
                           <button
-                            onClick={() => handleDisableUser(user.id, user.name)}
-                            className="px-3 py-1 bg-red-100 text-red-700 rounded hover:bg-red-200 transition-colors text-sm"
+                            type="button"
+                            disabled={isCurrentUser}
+                            onClick={async () => {
+                              try {
+                                const nextDisabled = !user.disabled;
+                                await toggleUserStatus(user.id, nextDisabled);
+                                toast.success(`User "${user.name}" is now ${nextDisabled ? 'inactive' : 'active'}.`);
+                              } catch {
+                                toast.error('Failed to update user status. Please try again.');
+                              }
+                            }}
+                            className={`px-3 py-1 rounded text-sm transition-colors flex items-center gap-1 ${
+                              user.disabled
+                                ? 'bg-green-100 text-green-700 hover:bg-green-200'
+                                : 'bg-red-100 text-red-700 hover:bg-red-200'
+                            } ${isCurrentUser ? 'opacity-50 cursor-not-allowed' : ''}`}
                           >
-                            Disable
+                            {user.disabled ? (
+                              <>
+                                <ToggleRight className="w-4 h-4" />
+                                Activate
+                              </>
+                            ) : (
+                              <>
+                                <ToggleLeft className="w-4 h-4" />
+                                Deactivate
+                              </>
+                            )}
                           </button>
                         </div>
-                      )}
-                    </td>
-                  </tr>
-                ))}
+                      </td>
+                    </tr>
+                  );
+                })}
               </tbody>
             </table>
           </div>
