@@ -129,6 +129,19 @@ const PAGE_ACCESS: Partial<Record<AppPage, UserRole[]>> = {
 };
 
 const PUBLIC_PAGES: AppPage[] = ['login'];
+const LOG_PREFIX = '[AppContext]';
+
+const logInfo = (...args: unknown[]) => {
+  console.log(LOG_PREFIX, ...args);
+};
+
+const logWarn = (...args: unknown[]) => {
+  console.warn(LOG_PREFIX, ...args);
+};
+
+const logError = (...args: unknown[]) => {
+  console.error(LOG_PREFIX, ...args);
+};
 
 // Mock initial investors
 export function AppProvider({ children }: { children: ReactNode }) {
@@ -139,12 +152,13 @@ export function AppProvider({ children }: { children: ReactNode }) {
     transactions: [],
     investors: [],
   }));
-  const [bootStatus, setBootStatus] = useState<{ users: boolean; investors: boolean }>({
+  const [bootStatus, setBootStatus] = useState<{ auth: boolean; users: boolean; investors: boolean }>({
+    auth: !USE_API,
     users: !USE_API,
     investors: !USE_API,
   });
   const [currentPage, setCurrentPageState] = useState<AppPage>(DEFAULT_PAGE);
-  const isBootstrapping = !(bootStatus.users && bootStatus.investors);
+  const isBootstrapping = Object.values(bootStatus).some(status => !status);
 
   const isAuthorized = useCallback(
     (page: AppPage, roleOverride?: UserRole | null) => {
@@ -189,32 +203,62 @@ export function AppProvider({ children }: { children: ReactNode }) {
   }, [user, currentPage, isAuthorized, setCurrentPage]);
 
   useEffect(() => {
-    if (!USE_API || tokens || !loadAuthTokens()) return;
-    const stored = loadAuthTokens();
-    if (!stored) return;
-    setTokens(stored);
-    apiClient
-      .get<User>('/api/v1/auth/me')
-      .then(setUser)
-      .catch(() => {
+    if (!USE_API) return;
+    let cancelled = false;
+
+    const hydrateUser = async () => {
+      const stored = tokens ?? loadAuthTokens();
+      logInfo('Bootstrapping start', { useApi: USE_API, hasStoredTokens: Boolean(tokens ?? loadAuthTokens()) });
+      if (!stored) {
+        logInfo('No stored tokens found; skipping /auth/me');
+        setBootStatus(prev => ({ ...prev, auth: true }));
+        return;
+      }
+      if (!tokens) {
+        setTokens(stored);
+      }
+      setBootStatus(prev => ({ ...prev, auth: false }));
+      try {
+        logInfo('Fetching /api/v1/auth/me');
+        const currentUser = await apiClient.get<User>('/api/v1/auth/me');
+        if (cancelled) return;
+        logInfo('Received /auth/me response', currentUser);
+        setUser(currentUser);
+        setCurrentPage('dashboard', { role: currentUser.role });
+      } catch (error) {
+        if (cancelled) return;
+        logError('Failed to fetch /auth/me; clearing tokens', error);
         clearAuthTokens();
         setTokens(null);
         setUser(null);
-      });
-  }, [tokens]);
+      } finally {
+        if (!cancelled) {
+          setBootStatus(prev => ({ ...prev, auth: true }));
+        }
+      }
+    };
+
+    hydrateUser();
+
+    return () => {
+      cancelled = true;
+    };
+  }, [tokens, setCurrentPage]);
 
   useEffect(() => {
     if (!USE_API || !user) return;
     let cancelled = false;
     setBootStatus(prev => ({ ...prev, investors: false }));
     const loadInvestors = async () => {
+      logInfo('Loading investors from API');
       try {
         const response = await apiClient.get<InvestorApiResponse[]>('/api/v1/investors');
+        logInfo('Investors response received', response.length);
         if (cancelled) return;
         const normalized: Investor[] = response.map(mapInvestorResponse);
         setData(prev => ({ ...prev, investors: normalized }));
       } catch (error) {
-        console.warn('Failed to load investors', error);
+        logWarn('Failed to load investors', error);
       } finally {
         if (!cancelled) {
           setBootStatus(prev => ({ ...prev, investors: true }));
@@ -232,15 +276,17 @@ export function AppProvider({ children }: { children: ReactNode }) {
     let cancelled = false;
     setBootStatus(prev => ({ ...prev, users: false }));
     const loadUsers = async () => {
+      logInfo('Loading users from API');
       try {
         const response = await apiClient.get<UserApiResponse[]>('/api/v1/users');
+        logInfo('Users response received', response.length);
         if (cancelled) return;
         setData(prev => ({
           ...prev,
           users: response.map(u => ({ ...u })),
         }));
       } catch (error) {
-        console.warn('Failed to load users', error);
+        logWarn('Failed to load users', error);
       } finally {
         if (!cancelled) {
           setBootStatus(prev => ({ ...prev, users: true }));
@@ -256,10 +302,12 @@ export function AppProvider({ children }: { children: ReactNode }) {
   const login = useCallback(async (email: string, password: string): Promise<boolean> => {
     if (USE_API) {
       try {
+        logInfo('Attempting login via API', { email });
         const response = await apiClient.post<{ accessToken: string; refreshToken: string; expiresIn: number; user: User }>(
           '/api/v1/auth/login',
           { email, password }
         );
+        logInfo('Login succeeded', { user: response.user });
         const nextTokens: AuthTokens = {
           accessToken: response.accessToken,
           refreshToken: response.refreshToken,
@@ -271,7 +319,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
         setCurrentPage('dashboard', { role: response.user.role });
         return true;
       } catch (err) {
-        console.error('Login failed', err);
+        logError('Login failed', err);
         throw err;
       }
     }
@@ -285,10 +333,12 @@ export function AppProvider({ children }: { children: ReactNode }) {
 
   const logout = useCallback(async () => {
     if (USE_API) {
+      logInfo('Logging out', { hasTokens: Boolean(tokens) });
       try {
         await apiClient.post('/api/v1/auth/logout', { refreshToken: tokens?.refreshToken });
+        logInfo('Logout API call succeeded');
       } catch (err) {
-        console.warn('Logout API call failed', err);
+        logWarn('Logout API call failed', err);
       }
       clearAuthTokens();
       setTokens(null);
@@ -299,15 +349,17 @@ export function AppProvider({ children }: { children: ReactNode }) {
 
   const addUser = useCallback(async (userData: Omit<User, 'id'>) => {
     if (USE_API) {
+      logInfo('Creating user via API', { email: userData.email });
       try {
         const response = await apiClient.post<UserApiResponse>('/api/v1/users', {
           ...userData,
           password: 'password',
         });
+        logInfo('User created', response);
         setData(prev => ({ ...prev, users: [...prev.users, response] }));
         return true;
       } catch (error) {
-        console.error('Failed to create user', error);
+        logError('Failed to create user', error);
         return false;
       }
     }
@@ -321,17 +373,19 @@ export function AppProvider({ children }: { children: ReactNode }) {
 
   const updateUserRole = useCallback(async (userId: string, role: UserRole) => {
     if (USE_API) {
+      logInfo('Updating user role via API', { userId, role });
       try {
         const response = await apiClient.patch<UserApiResponse>(`/api/v1/users/${userId}/role`, {
           role,
         });
+        logInfo('User role updated', response);
         setData(prev => ({
           ...prev,
           users: prev.users.map(u => (u.id === response.id ? { ...u, role: response.role, disabled: response.disabled } : u)),
         }));
         return true;
       } catch (error) {
-        console.error('Failed to update user role', error);
+        logError('Failed to update user role', error);
         return false;
       }
     }
@@ -344,17 +398,19 @@ export function AppProvider({ children }: { children: ReactNode }) {
 
   const disableUser = useCallback(async (userId: string) => {
     if (USE_API) {
+      logInfo('Disabling user via API', { userId });
       try {
         const response = await apiClient.patch<UserApiResponse>(`/api/v1/users/${userId}/role`, {
           disabled: true,
         });
+        logInfo('User disabled', response);
         setData(prev => ({
           ...prev,
           users: prev.users.map(u => (u.id === response.id ? { ...u, role: response.role, disabled: response.disabled } : u)),
         }));
         return true;
       } catch (error) {
-        console.error('Failed to disable user', error);
+        logError('Failed to disable user', error);
         return false;
       }
     }
@@ -377,13 +433,15 @@ export function AppProvider({ children }: { children: ReactNode }) {
 
   const addInvestor = useCallback(async (name: string) => {
     if (USE_API) {
+      logInfo('Creating investor via API', { name });
       try {
         const response = await apiClient.post<InvestorApiResponse>('/api/v1/investors', { name });
+        logInfo('Investor created', response);
         const mapped = mapInvestorResponse(response);
         setData(prev => ({ ...prev, investors: [...prev.investors, mapped] }));
         return true;
       } catch (error) {
-        console.error('Failed to add investor', error);
+        logError('Failed to add investor', error);
         return false;
       }
     }
@@ -460,13 +518,15 @@ export function AppProvider({ children }: { children: ReactNode }) {
       const payload: InvestorActivityPayload = { type: 'investment', amount, notes };
       if (USE_API) {
         try {
+          logInfo('Adding investment via API', { investorId, amount, notes });
           const response = await apiClient.post<InvestorApiResponse>(`/api/v1/investors/${investorId}/activities`, {
             ...payload,
           });
+          logInfo('Investment recorded', response);
           updateInvestorFromResponse(response);
           return true;
         } catch (error) {
-          console.error('Failed to add investment', error);
+          logError('Failed to add investment', error);
           return false;
         }
       }
@@ -481,13 +541,15 @@ export function AppProvider({ children }: { children: ReactNode }) {
       const payload: InvestorActivityPayload = { type: 'withdrawal', amount, notes };
       if (USE_API) {
         try {
+          logInfo('Adding withdrawal via API', { investorId, amount, notes });
           const response = await apiClient.post<InvestorApiResponse>(`/api/v1/investors/${investorId}/activities`, {
             ...payload,
           });
+          logInfo('Withdrawal recorded', response);
           updateInvestorFromResponse(response);
           return true;
         } catch (error) {
-          console.error('Failed to add withdrawal', error);
+          logError('Failed to add withdrawal', error);
           return false;
         }
       }

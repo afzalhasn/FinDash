@@ -39,8 +39,8 @@ Goal: walk every screen and API path to ensure the UI reflects live FastAPI/Post
 ## Frontend Verification Tasks
 
 1. **Global Bootstrap**
-   - [ ] Ensure `AppContext` boots with `NEXT_PUBLIC_USE_API=true`, fetches `/auth/me`, `/users`, `/investors`.
-   - [ ] Confirm `isBootstrapping` overlay hides once API calls resolve.
+   - [x] Ensure `AppContext` boots with `NEXT_PUBLIC_USE_API=true`, fetches `/auth/me`, `/users`, `/investors`.
+   - [x] Confirm `isBootstrapping` overlay hides once API calls resolve.
 
 2. **Login Page**
    - [ ] Attempt invalid creds; UI should display backend error message.
