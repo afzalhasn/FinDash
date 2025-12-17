@@ -1,5 +1,6 @@
 from datetime import datetime
 from typing import Optional
+from uuid import UUID
 
 from fastapi import APIRouter, Depends, Query
 
@@ -36,7 +37,7 @@ def create_transaction(
 
 @router.patch("/{transaction_id}", response_model=TransactionOut, dependencies=[Depends(require_roles("admin", "partner"))])
 def update_transaction(
-    transaction_id: str,
+    transaction_id: UUID,
     payload: TransactionCreate,
     service: TransactionService = Depends(get_transaction_service),
 ):
@@ -44,7 +45,7 @@ def update_transaction(
 
 
 @router.delete("/{transaction_id}", status_code=204, dependencies=[Depends(require_roles("admin"))])
-def delete_transaction(transaction_id: str, service: TransactionService = Depends(get_transaction_service)):
+def delete_transaction(transaction_id: UUID, service: TransactionService = Depends(get_transaction_service)):
     service.delete_transaction(transaction_id)
     return {"detail": "deleted"}
 
