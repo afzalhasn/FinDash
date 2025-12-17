@@ -1,4 +1,5 @@
 from uuid import UUID
+
 from fastapi import APIRouter, Depends
 
 from app.api.dependencies import get_user_service, require_roles
