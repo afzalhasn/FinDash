@@ -5,7 +5,7 @@ from typing import Any, Dict, List
 from sqlalchemy import func, select, case
 from sqlalchemy.orm import Session
 
-from app.models import Transaction, TransactionType
+from app.models import Transaction, TransactionType, Investor
 from app.core.timezone import ensure_ist
 
 
@@ -48,11 +48,15 @@ class InsightService:
 
         profit = sales - purchases - expenses
 
+        total_cash_in_stmt = select(func.coalesce(func.sum(Investor.net_investment), Decimal("0")))
+        total_cash_in = self.session.execute(total_cash_in_stmt).scalar() or Decimal("0")
+
         return {
             "purchases": float(purchases),
             "sales": float(sales),
             "expenses": float(expenses),
             "profit": float(profit),
+            "total_cash_in": float(total_cash_in),
         }
 
     def product_metrics(self, start: datetime | None = None, end: datetime | None = None) -> List[dict[str, Any]]:

@@ -10,6 +10,7 @@ class InsightSummary(BaseModel):
     sales: float
     expenses: float
     profit: float
+    total_cash_in: float
 
 
 class ProductInsight(BaseModel):

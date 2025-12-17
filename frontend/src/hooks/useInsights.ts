@@ -35,6 +35,14 @@ export interface DashboardSummary {
   totalCashIn: number;
 }
 
+type InsightSummaryResponse = {
+  purchases: number;
+  sales: number;
+  expenses: number;
+  profit: number;
+  total_cash_in: number;
+};
+
 const computeSummary = (
   transactions: Transaction[],
   investors: Investor[],
@@ -76,14 +84,14 @@ export function useInsightSummary(range: { start: Date; end: Date }) {
       setState(prev => ({ ...prev, isLoading: true }));
       try {
         const params = new URLSearchParams({ start: startISO, end: endISO });
-        const response = await apiClient.get<Omit<DashboardSummary, 'totalCashIn'>>(
+        const response = await apiClient.get<InsightSummaryResponse>(
           `/api/v1/insights/summary?${params.toString()}`
         );
         if (!cancelled) {
           setState({
             data: {
               ...response,
-              totalCashIn: investors.reduce((sum, inv) => sum + inv.netInvestment, 0),
+              totalCashIn: response.total_cash_in,
             },
             isLoading: false,
           });
@@ -111,12 +119,12 @@ export function useInsightSummary(range: { start: Date; end: Date }) {
     }
     const params = new URLSearchParams({ start: startISO, end: endISO });
     apiClient
-      .get<Omit<DashboardSummary, 'totalCashIn'>>(`/api/v1/insights/summary?${params.toString()}`)
+      .get<InsightSummaryResponse>(`/api/v1/insights/summary?${params.toString()}`)
       .then(response =>
         setState({
           data: {
             ...response,
-            totalCashIn: investors.reduce((sum, inv) => sum + inv.netInvestment, 0),
+            totalCashIn: response.total_cash_in,
           },
           isLoading: false,
         })
