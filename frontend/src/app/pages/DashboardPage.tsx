@@ -188,6 +188,7 @@ export function DashboardPage() {
         subtitle: `Welcome, ${user?.name ?? 'Guest'} (${user?.role ?? 'unknown'})`,
         actions: headerActions,
       }}
+      onTitleClick={() => setCurrentPage('dashboard')}
     >
       <DateRangeFilter
         value={{ preset, startDate: customStartDate, endDate: customEndDate }}

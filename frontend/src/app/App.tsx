@@ -32,7 +32,7 @@ function AppRouter() {
 
   if (isBootstrapping) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-gray-50">
+      <div className="min-h-screen flex items-center justify-center bg-gray-300 dark:bg-background transition-colors">
         <div className="bg-white rounded-xl shadow-md p-8 flex flex-col items-center gap-3">
           <Loader2 className="w-8 h-8 text-indigo-600 animate-spin" />
           <p className="text-gray-600">Loading workspace…</p>

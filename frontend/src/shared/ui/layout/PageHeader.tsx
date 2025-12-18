@@ -2,6 +2,7 @@
 
 import React from 'react';
 import { cn } from '../utils';
+import Link from 'next/link';
 
 export interface PageHeaderProps {
   title: string;
@@ -12,9 +13,10 @@ export interface PageHeaderProps {
     icon?: React.ComponentType<React.SVGProps<SVGSVGElement>>;
   };
   actions?: React.ReactNode;
+  onTitleClick?: () => void;
 }
 
-export function PageHeader({ title, subtitle, backButton, actions }: PageHeaderProps) {
+export function PageHeader({ title, subtitle, backButton, actions, onTitleClick }: PageHeaderProps) {
   const BackIcon = backButton?.icon;
 
   return (
@@ -31,7 +33,17 @@ export function PageHeader({ title, subtitle, backButton, actions }: PageHeaderP
         )}
         <div className="flex flex-col gap-1 sm:flex-row sm:items-center sm:justify-between">
           <div>
-            <h1 className="text-gray-900">{title}</h1>
+            {onTitleClick ? (
+              <button
+                type="button"
+                onClick={onTitleClick}
+                className="text-left text-gray-900 hover:text-indigo-600 transition-colors"
+              >
+                <h1>{title}</h1>
+              </button>
+            ) : (
+              <h1 className="text-gray-900">{title}</h1>
+            )}
             {subtitle && <p className="text-gray-600">{subtitle}</p>}
           </div>
           {actions ? (

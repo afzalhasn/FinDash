@@ -4,6 +4,7 @@ import { useInvestorsFeature } from '../../features/investors/hooks/useInvestors
 import { ArrowLeft, UserPlus, TrendingUp, TrendingDown, DollarSign } from 'lucide-react';
 import { toast } from 'sonner';
 import { formatIST } from '../../shared/lib/timezone';
+import { PageLayout } from '../../shared/ui/layout/PageLayout';
 
 type ActionMode = 'select' | 'add' | 'investment' | 'withdrawal';
 
@@ -67,23 +68,18 @@ export function AddInvestorPage() {
   };
 
   return (
-    <div className="min-h-screen bg-gray-50">
-      {/* Header */}
-      <header className="bg-white border-b border-gray-200 sticky top-0 z-10">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
-          <button
-            onClick={() => setCurrentPage('dashboard')}
-            className="flex items-center gap-2 text-gray-600 hover:text-gray-900 mb-2"
-          >
-            <ArrowLeft className="w-5 h-5" />
-            Back to Dashboard
-          </button>
-          <h1 className="text-gray-900">Investor Management</h1>
-          <p className="text-gray-600">Track capital investments and withdrawals</p>
-        </div>
-      </header>
-
-      <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+    <PageLayout
+      header={{
+        title: 'Investor Management',
+        subtitle: 'Track capital investments and withdrawals',
+        backButton: {
+          label: 'Back to Dashboard',
+          onClick: () => setCurrentPage('dashboard'),
+          icon: ArrowLeft,
+        },
+      }}
+      contentClassName="py-8"
+    >
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
           {/* Left Column - Actions */}
           <div className="lg:col-span-1">
@@ -375,7 +371,6 @@ export function AddInvestorPage() {
             )}
           </div>
         </div>
-      </main>
-    </div>
+    </PageLayout>
   );
 }
