@@ -1,11 +1,12 @@
 import { apiClient } from '../../../shared/lib/api';
-import { serializeISTBoundary } from '../../../shared/lib/timezone';
+import { serializeISTBoundary, istBoundaryDate } from '../../../shared/lib/timezone';
 import type {
   CreateTransactionPayload,
   Transaction,
   TransactionApiResponse,
   TransactionCreateRequest,
   TransactionFilters,
+  TransactionsResponse,
 } from '../types';
 
 export const PRODUCTS_API_PATH = '/api/v1/transactions/products/available';
@@ -21,6 +22,16 @@ export const normalizeFilters = (filters: TransactionFilters): NormalizedFilters
   page: filters.page && filters.page > 0 ? filters.page : 1,
   pageSize: filters.pageSize && filters.pageSize > 0 ? filters.pageSize : DEFAULT_PAGE_SIZE,
 });
+
+type TextMatchFn = (value: string | undefined, term: string) => boolean;
+type BoundaryResolver = (value: string, options?: { endOfDay?: boolean }) => Date | undefined;
+
+const defaultTextMatcher: TextMatchFn = (value, term) => {
+  if (!value || !term) return false;
+  return value.toLowerCase().includes(term);
+};
+
+const defaultBoundaryResolver: BoundaryResolver = (value, options) => istBoundaryDate(value, options);
 
 export const buildQueryString = (filters: NormalizedFilters) => {
   const params = new URLSearchParams();
@@ -53,6 +64,65 @@ export const mapTransactionResponse = (payload: TransactionApiResponse): Transac
   date: new Date(payload.occurred_at),
   personName: payload.person_name,
 });
+
+const normalizeSearchTerm = (value?: string) => value?.trim().toLowerCase();
+
+export const buildLocalTransactionsResponse = (
+  transactions: Transaction[],
+  filters: NormalizedFilters,
+  textMatcher: TextMatchFn = defaultTextMatcher,
+  boundaryResolver: BoundaryResolver = defaultBoundaryResolver,
+): TransactionsResponse => {
+  const normalizedFilters = {
+    ...filters,
+    product: normalizeSearchTerm(filters.product),
+    person: normalizeSearchTerm(filters.person),
+    search: normalizeSearchTerm(filters.search),
+  };
+
+  const startDate = normalizedFilters.startDate ? boundaryResolver(normalizedFilters.startDate) : undefined;
+  const endDate = normalizedFilters.endDate ? boundaryResolver(normalizedFilters.endDate, { endOfDay: true }) : undefined;
+
+  const filtered = transactions.filter((transaction) => {
+    if (normalizedFilters.type && normalizedFilters.type !== 'all' && transaction.type !== normalizedFilters.type) {
+      return false;
+    }
+    if (normalizedFilters.product && !textMatcher(transaction.productName, normalizedFilters.product)) {
+      return false;
+    }
+    if (normalizedFilters.person && !textMatcher(transaction.personName, normalizedFilters.person)) {
+      return false;
+    }
+    if (normalizedFilters.search) {
+      const matchesSearch =
+        textMatcher(transaction.productName, normalizedFilters.search) ||
+        textMatcher(transaction.personName, normalizedFilters.search) ||
+        textMatcher(transaction.notes, normalizedFilters.search) ||
+        textMatcher(transaction.expenseCategory, normalizedFilters.search) ||
+        textMatcher(transaction.expenseDescription, normalizedFilters.search);
+      if (!matchesSearch) {
+        return false;
+      }
+    }
+    if (startDate && (!transaction.date || transaction.date < startDate)) {
+      return false;
+    }
+    if (endDate && (!transaction.date || transaction.date > endDate)) {
+      return false;
+    }
+    return true;
+  });
+
+  const offset = (normalizedFilters.page - 1) * normalizedFilters.pageSize;
+  const paginatedItems = filtered.slice(offset, offset + normalizedFilters.pageSize);
+
+  return {
+    items: paginatedItems,
+    total: filtered.length,
+    page: normalizedFilters.page,
+    pageSize: normalizedFilters.pageSize,
+  };
+};
 
 export const fetchTransactionsFromApi = async (filters: NormalizedFilters): Promise<Transaction[]> => {
   const queryString = buildQueryString(filters);

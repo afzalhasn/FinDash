@@ -43,8 +43,8 @@ Remove repeated layout code and standardize page scaffolding.
   _Story 3.1.1_: Extract the dashboard header into `PageHeader`. ✅  
   _Story 3.1.2_: Update Add Entry, Transactions, Insights pages to use the shared shell. ✅
 
-- **Task 3.2 — Create reusable filter/date controls**  
-  Encapsulate the repeated time range filters and date pickers.  
+- **Task 3.2 — Create reusable filter/date controls** ✅  
+  Encapsulate the repeated time range filters and date pickers. `DateRangeFilter` now lives in `src/shared/ui/filters` and powers dashboard/insights presets.  
   _Story 3.2.1_: Implement `DateRangeFilter` component with presets (today/week/month/custom). ✅  
   _Story 3.2.2_: Replace bespoke filter code in Dashboard/ProductInsights with the new component. ✅
 
@@ -52,10 +52,10 @@ Remove repeated layout code and standardize page scaffolding.
 Ensure each module can be tested in isolation.
 
 - **Task 4.1 — Add unit tests for services/hooks**  
-  _Story 4.1.1_: Write tests for auth services (token persistence, `isAuthorized`).  
-  _Story 4.1.2_: Test transaction inventory math and filtering.  
-  _Story 4.1.3_: Cover investor net-balance adjustments.
+  _Story 4.1.1_: Write tests for auth services (token persistence, `isAuthorized`). ✅ (`src/shared/lib/__tests__/auth.test.ts`)  
+  _Story 4.1.2_: Test transaction inventory math and filtering. ✅ (`src/features/transactions/hooks/__tests__/useInventory.test.ts`, `src/features/transactions/services/__tests__/api.test.ts`)  
+_Story 4.1.3_: Cover investor net-balance adjustments. ✅ (`src/features/investors/services/adjustments.ts`, `src/features/investors/services/__tests__/adjustments.test.ts`)
 
 - **Task 4.2 — Add integration smoke tests per feature**  
-  _Story 4.2.1_: Create Playwright scenarios for new feature routes (auth, transactions).  
+  _Story 4.2.1_: Create Playwright scenarios for new feature routes (auth, transactions). ✅ (`tests/e2e/auth.spec.ts`, `tests/e2e/transactions.spec.ts`)  
   _Story 4.2.2_: Add a CI checklist to ensure modules export the expected public API.

@@ -15,8 +15,9 @@ import { AppPage, DEFAULT_PAGE, PUBLIC_PAGES } from '../../features/auth/routes'
 import { MOCK_USERS } from '../../features/auth/mockData';
 import type { Transaction, QuantityType, ExpenseCategory } from '../../features/transactions/types';
 import { fetchAllTransactions } from '../../features/transactions/services/api';
-import type { Investor, InvestmentActivity, InvestorActivityPayload } from '../../features/investors/types';
+import type { Investor, InvestorActivityPayload } from '../../features/investors/types';
 import { fetchInvestors, createInvestorRequest, createInvestorActivityRequest } from '../../features/investors/services/api';
+import { applyActivityToInvestors } from '../../features/investors/services/adjustments';
 import { fetchUsers, createUserRequest, updateUserRoleRequest, toggleUserStatusRequest } from '../../features/users/services/api';
 export type { User, UserRole } from '../../features/auth/types';
 export type { AppPage } from '../../features/auth/routes';
@@ -336,32 +337,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
   const applyLocalInvestorActivity = useCallback((investorId: string, payload: InvestorActivityPayload) => {
     setData(prev => ({
       ...prev,
-      investors: prev.investors.map(inv => {
-        if (inv.id !== investorId) return inv;
-        const activity: InvestmentActivity = {
-          id: Date.now().toString(),
-          type: payload.type,
-          amount: payload.amount,
-          date: new Date(),
-          notes: payload.notes,
-        };
-        if (payload.type === 'investment') {
-          return {
-            ...inv,
-            totalInvested: inv.totalInvested + payload.amount,
-            netInvestment: inv.netInvestment + payload.amount,
-            lastActivityDate: activity.date,
-            investments: [...inv.investments, activity],
-          };
-        }
-        return {
-          ...inv,
-          totalWithdrawn: inv.totalWithdrawn + payload.amount,
-          netInvestment: inv.netInvestment - payload.amount,
-          lastActivityDate: activity.date,
-          investments: [...inv.investments, activity],
-        };
-      }),
+      investors: applyActivityToInvestors(prev.investors, investorId, payload),
     }));
   }, []);
 
