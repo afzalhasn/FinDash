@@ -49,6 +49,7 @@ build/
 coverage/
 .pytest_cache/
 .nyc_output/
+frontend/tests/e2e/results/
 
 # Runtime
 .cache/
