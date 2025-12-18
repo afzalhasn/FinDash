@@ -8,12 +8,11 @@ import React, {
   useEffect,
   useCallback,
 } from 'react';
-import { apiClient } from '../../shared/lib/api';
 import { useAuth } from '../../features/auth/context';
 import type { User, UserRole } from '../../features/auth/types';
 import { AppPage, DEFAULT_PAGE, PUBLIC_PAGES } from '../../features/auth/routes';
 import { MOCK_USERS } from '../../features/auth/mockData';
-import type { Transaction, QuantityType, ExpenseCategory } from '../../features/transactions/types';
+import type { Transaction } from '../../features/transactions/types';
 import { fetchAllTransactions } from '../../features/transactions/services/api';
 import type { Investor, InvestorActivityPayload } from '../../features/investors/types';
 import { fetchInvestors, createInvestorRequest, createInvestorActivityRequest } from '../../features/investors/services/api';
