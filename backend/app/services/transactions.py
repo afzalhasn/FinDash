@@ -56,6 +56,7 @@ class TransactionService:
             payload.quantity_type,
             exclude_transaction_id=exclude_transaction_id,
         )
+
         if available_qty <= 0:
             logger.warning(
                 "Sell transaction rejected - no inventory product=%s qty_type=%s",

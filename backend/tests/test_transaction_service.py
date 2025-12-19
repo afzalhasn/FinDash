@@ -3,7 +3,7 @@ import uuid
 import pytest
 from fastapi import HTTPException
 
-from app.models import Transaction, TransactionType, User, UserRole
+from app.models import QuantityType, Transaction, TransactionType, User, UserRole
 from app.services.transactions import TransactionService
 from app.schemas.transactions import TransactionCreate
 from app.core.timezone import now_ist
@@ -12,13 +12,21 @@ from app.core.timezone import now_ist
 class FakeTransactionRepo:
     def __init__(self):
         self.transactions = []
-        self.products = ["Laptop"]
+        self.products = set()
+        self.inventory = {}
 
     def search(self, **kwargs):
         return self.transactions
 
     def get_available_products(self):
-        return self.products
+        return sorted(self.products)
+
+    def set_inventory(self, product_name, quantity_type, quantity):
+        self.products.add(product_name)
+        self.inventory[(product_name, quantity_type)] = quantity
+
+    def get_available_quantity(self, product_name, quantity_type, *, exclude_transaction_id=None):
+        return self.inventory.get((product_name, quantity_type), 0)
 
     def add(self, transaction):
         self.transactions.append(transaction)
@@ -38,6 +46,7 @@ class FakeTransactionRepo:
 
 def make_service():
     repo = FakeTransactionRepo()
+    repo.set_inventory("Laptop", QuantityType.unit, 10)
     service = TransactionService(transactions=repo)
     user = User(id=uuid.uuid4(), name="Partner", email="partner@findash.com", role=UserRole.partner, hashed_password="")
     return service, repo, user
@@ -48,7 +57,7 @@ def make_payload(product="Laptop", type_=TransactionType.sell):
         type=type_,
         product_name=product,
         quantity=1,
-        quantity_type=None,
+        quantity_type=QuantityType.unit,
         price_per_unit=None,
         total_amount=100,
         notes=None,

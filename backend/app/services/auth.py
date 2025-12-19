@@ -11,15 +11,21 @@ from app.core.security import (
     verify_password,
     TokenPair,
 )
-from app.models import User
-from app.repositories import UserRepository, RevokedTokenRepository
-from app.models import RevokedToken
+from app.models import RevokedToken, User
+from app.repositories import RevokedTokenRepository, UserRepository
 
 logger = logging.getLogger(__name__)
 
 
 class AuthService:
-    def __init__(self, settings: Settings, users: UserRepository, revoked_tokens: RevokedTokenRepository):
+    revoked_refresh_tokens: set[str] = set()
+
+    def __init__(
+        self,
+        settings: Settings,
+        users: UserRepository,
+        revoked_tokens: RevokedTokenRepository | None = None,
+    ):
         self.settings = settings
         self.users = users
         self.revoked_tokens = revoked_tokens
@@ -37,7 +43,12 @@ class AuthService:
         return user, self._issue_tokens(user)
 
     def refresh(self, refresh_token: str) -> tuple[User, TokenPair]:
-        if self.revoked_tokens.exists(refresh_token):
+        if refresh_token in self.revoked_refresh_tokens:
+            logger.warning("Revoked refresh token attempted use")
+            raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Refresh token revoked")
+
+        if self.revoked_tokens and self.revoked_tokens.exists(refresh_token):
+            self.revoked_refresh_tokens.add(refresh_token)
             logger.warning("Revoked refresh token attempted use")
             raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Refresh token revoked")
 
@@ -53,9 +64,14 @@ class AuthService:
         return user, self._issue_tokens(user)
 
     def revoke_refresh_token(self, refresh_token: str) -> None:
-        revoked = RevokedToken(token=refresh_token)
-        self.revoked_tokens.add(revoked)
-        logger.info("Refresh token revoked token_id=%s", revoked.id)
+        self.revoked_refresh_tokens.add(refresh_token)
+
+        if self.revoked_tokens:
+            revoked = RevokedToken(token=refresh_token)
+            self.revoked_tokens.add(revoked)
+            logger.info("Refresh token revoked token_id=%s", revoked.id)
+        else:
+            logger.info("Refresh token revoked (in-memory cache only)")
 
     def _issue_tokens(self, user: User) -> TokenPair:
         access = create_access_token(subject=str(user.id), settings=self.settings)
