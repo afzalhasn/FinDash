@@ -17,7 +17,7 @@ import { fetchAllTransactions } from '../../features/transactions/services/api';
 import type { Investor, InvestorActivityPayload } from '../../features/investors/types';
 import { fetchInvestors, createInvestorRequest, createInvestorActivityRequest } from '../../features/investors/services/api';
 import { applyActivityToInvestors } from '../../features/investors/services/adjustments';
-import { fetchUsers, createUserRequest, updateUserRoleRequest, toggleUserStatusRequest } from '../../features/users/services/api';
+import { fetchUsers, createUserRequest, updateUserRoleRequest, toggleUserStatusRequest, updateUserRequest, deleteUserRequest } from '../../features/users/services/api';
 export type { User, UserRole } from '../../features/auth/types';
 export type { AppPage } from '../../features/auth/routes';
 export type { Transaction, QuantityType, ExpenseCategory } from '../../features/transactions/types';
@@ -37,7 +37,9 @@ interface AppContextType {
   isBootstrapping: boolean;
   login: (email: string, password: string) => Promise<boolean>;
   logout: () => void;
-  addUser: (user: Omit<User, 'id'>) => Promise<boolean>;
+  addUser: (user: Omit<User, 'id'> & { password?: string }) => Promise<boolean>;
+  updateUser: (userId: string, updates: { name?: string; email?: string; role?: UserRole; password?: string }) => Promise<boolean>;
+  deleteUser: (userId: string) => Promise<boolean>;
   updateUserRole: (userId: string, role: UserRole) => Promise<boolean>;
   disableUser: (userId: string) => Promise<boolean>;
   toggleUserStatus: (userId: string, disabled: boolean) => Promise<boolean>;
@@ -214,13 +216,13 @@ export function AppProvider({ children }: { children: ReactNode }) {
     setCurrentPage('login');
   }, [authLogout, setCurrentPage]);
 
-  const addUser = useCallback(async (userData: Omit<User, 'id'>) => {
+  const addUser = useCallback(async (userData: Omit<User, 'id'> & { password?: string }) => {
     if (USE_API) {
       logInfo('Creating user via API', { email: userData.email });
       try {
         const created = await createUserRequest({
           ...userData,
-          password: 'password',
+          password: userData.password ?? 'password',
         });
         logInfo('User created', created);
         setData(prev => ({ ...prev, users: [...prev.users, created] }));
@@ -260,6 +262,34 @@ export function AppProvider({ children }: { children: ReactNode }) {
     }));
     return true;
   }, []);
+  const updateUser = useCallback(
+    async (userId: string, updates: { name?: string; email?: string; role?: UserRole; password?: string }) => {
+      if (USE_API) {
+        logInfo('Updating user via API', { userId, updates });
+        try {
+          const response = await updateUserRequest(userId, updates);
+          setData(prev => ({
+            ...prev,
+            users: prev.users.map(u => (u.id === response.id ? response : u)),
+          }));
+          return true;
+        } catch (error) {
+          logError('Failed to update user', error);
+          return false;
+        }
+      }
+      setData(prev => ({
+        ...prev,
+        users: prev.users.map(u => {
+          if (u.id !== userId) return u;
+          const { password: _ignored, ...rest } = updates;
+          return { ...u, ...rest };
+        }),
+      }));
+      return true;
+    },
+    []
+  );
 
   const toggleUserStatus = useCallback(
     async (userId: string, disabled: boolean) => {
@@ -296,6 +326,26 @@ export function AppProvider({ children }: { children: ReactNode }) {
       return false;
     }
   }, [toggleUserStatus]);
+
+  const deleteUser = useCallback(
+    async (userId: string) => {
+      if (USE_API) {
+        logInfo('Deleting user via API', { userId });
+        try {
+          await deleteUserRequest(userId);
+        } catch (error) {
+          logError('Failed to delete user', error);
+          return false;
+        }
+      }
+      setData(prev => ({
+        ...prev,
+        users: prev.users.filter(u => u.id !== userId),
+      }));
+      return true;
+    },
+    []
+  );
 
   const getAvailableProducts = useCallback((): string[] => {
     const products = new Set<string>();
@@ -408,8 +458,10 @@ export function AppProvider({ children }: { children: ReactNode }) {
         logout,
         addUser,
         updateUserRole,
+        updateUser,
         disableUser,
         toggleUserStatus,
+        deleteUser,
         transactions,
         getAvailableProducts,
         investors,

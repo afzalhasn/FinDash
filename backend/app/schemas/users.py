@@ -16,6 +16,9 @@ class UserCreate(UserBase):
 class UserUpdate(BaseModel):
     name: str | None = None
     email: EmailStr | None = None
+    role: UserRole | None = None
+    password: str | None = None
+    disabled: bool | None = None
 
 
 class UserRoleUpdate(BaseModel):

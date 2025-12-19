@@ -16,6 +16,14 @@ export interface CreateUserPayload {
   password?: string;
 }
 
+export interface UpdateUserPayload {
+  name?: string;
+  email?: string;
+  role?: UserRole;
+  password?: string;
+  disabled?: boolean;
+}
+
 export const mapUserResponse = (payload: UserApiResponse): User => ({
   id: payload.id,
   name: payload.name,
@@ -42,4 +50,13 @@ export const updateUserRoleRequest = async (userId: string, role: UserRole): Pro
 export const toggleUserStatusRequest = async (userId: string, role: UserRole, disabled: boolean): Promise<User> => {
   const response = await apiClient.patch<UserApiResponse>(`/api/v1/users/${userId}/role`, { role, disabled });
   return mapUserResponse(response);
+};
+
+export const updateUserRequest = async (userId: string, payload: UpdateUserPayload): Promise<User> => {
+  const response = await apiClient.patch<UserApiResponse>(`/api/v1/users/${userId}`, payload);
+  return mapUserResponse(response);
+};
+
+export const deleteUserRequest = async (userId: string): Promise<void> => {
+  await apiClient.delete(`/api/v1/users/${userId}`);
 };

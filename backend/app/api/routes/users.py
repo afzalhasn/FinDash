@@ -28,7 +28,14 @@ def create_user(payload: UserCreate, user_service: UserService = Depends(get_use
 
 @router.patch("/{user_id}", response_model=UserOut, dependencies=[Depends(require_roles("admin"))])
 def update_user(user_id: UUID, payload: UserUpdate, user_service: UserService = Depends(get_user_service)):
-    user = user_service.update_user(user_id, name=payload.name, email=payload.email)
+    user = user_service.update_user(
+        user_id,
+        name=payload.name,
+        email=payload.email,
+        role=payload.role,
+        password=payload.password,
+        disabled=payload.disabled,
+    )
     return user
 
 
@@ -40,3 +47,9 @@ def update_user_role(
 ):
     user = user_service.update_role_status(user_id, role=payload.role, disabled=payload.disabled)
     return user
+
+
+@router.delete("/{user_id}", status_code=204, dependencies=[Depends(require_roles("admin"))])
+def delete_user(user_id: UUID, user_service: UserService = Depends(get_user_service)):
+    user_service.delete_user(user_id)
+    return None
