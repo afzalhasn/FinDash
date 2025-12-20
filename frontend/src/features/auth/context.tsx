@@ -1,11 +1,12 @@
 "use client";
 
 import React, { createContext, useCallback, useContext, useEffect, useRef, useState } from 'react';
-import { apiClient } from '../../shared/lib/api';
 import { saveAuthTokens, loadAuthTokens, clearAuthTokens } from '../../shared/lib/auth';
 import type { AuthTokens, User, UserRole } from './types';
 import { AppPage, PUBLIC_PAGES, PAGE_ACCESS } from './routes';
 import { MOCK_USERS } from './mockData';
+import { apiClient } from '../../shared/lib/api';
+import { loginRequest } from './services/api';
 
 const USE_API = process.env.NEXT_PUBLIC_USE_API === 'true';
 const LOG_PREFIX = '[AuthContext]';
@@ -104,10 +105,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const login = useCallback(async (email: string, password: string): Promise<User | null> => {
     if (USE_API) {
       try {
-        const response = await apiClient.post<{ access_token: string; refresh_token: string; expires_in: number; user: User }>(
-          '/api/v1/auth/login',
-          { email, password }
-        );
+        const response = await loginRequest(email, password);
         const nextTokens: AuthTokens = {
           accessToken: response.access_token,
           refreshToken: response.refresh_token,

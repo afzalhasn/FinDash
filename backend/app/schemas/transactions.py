@@ -3,7 +3,7 @@ from decimal import Decimal
 from typing import Literal, Optional
 from uuid import UUID
 
-from pydantic import BaseModel, field_validator
+from pydantic import BaseModel, ConfigDict, field_validator
 
 from app.models import TransactionType, QuantityType, ExpenseCategory
 from app.core.timezone import ensure_ist
@@ -39,5 +39,4 @@ class TransactionOut(TransactionBase):
     id: UUID
     person_name: str
 
-    class Config:
-        from_attributes = True
+    model_config = ConfigDict(from_attributes=True)

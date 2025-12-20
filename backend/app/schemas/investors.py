@@ -2,7 +2,7 @@ from datetime import datetime
 from decimal import Decimal
 from typing import Optional
 from uuid import UUID
-from pydantic import BaseModel, field_validator
+from pydantic import BaseModel, ConfigDict, field_validator
 
 from app.models import InvestmentActivityType
 from app.core.timezone import ensure_ist
@@ -20,8 +20,7 @@ class InvestorOut(BaseModel):
     net_investment: Decimal
     last_activity_at: Optional[datetime]
 
-    class Config:
-        from_attributes = True
+    model_config = ConfigDict(from_attributes=True)
 
 
 class InvestmentActivityCreate(BaseModel):

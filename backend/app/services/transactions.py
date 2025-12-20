@@ -84,7 +84,7 @@ class TransactionService:
             self._validate_sell_transaction(payload)
 
         transaction = Transaction(
-            **payload.dict(),
+            **payload.model_dump(),
             person_name=user.name,
             recorded_by_id=user.id,
         )
@@ -101,7 +101,7 @@ class TransactionService:
         if payload.type == TransactionType.sell:
             self._validate_sell_transaction(payload, exclude_transaction_id=str(transaction.id))
 
-        for field, value in payload.dict().items():
+        for field, value in payload.model_dump().items():
             setattr(transaction, field, value)
         self.transactions.flush()
         logger.info("Transaction updated id=%s", transaction_id)

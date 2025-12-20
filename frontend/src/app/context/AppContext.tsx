@@ -21,6 +21,7 @@ import { fetchUsers, createUserRequest, updateUserRoleRequest, toggleUserStatusR
 export type { User, UserRole } from '../../features/auth/types';
 export type { AppPage } from '../../features/auth/routes';
 export type { Transaction, QuantityType, ExpenseCategory } from '../../features/transactions/types';
+export type { Investor, InvestorActivityPayload } from '../../features/investors/types';
 
 export interface AppDataState {
   users: User[];
