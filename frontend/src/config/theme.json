@@ -1,0 +1,8 @@
+{
+  "defaultTheme": "system",
+  "themes": ["light", "dark"],
+  "labels": {
+    "light": "Daylight",
+    "dark": "Dark"
+  }
+}

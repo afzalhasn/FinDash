@@ -1,5 +1,6 @@
 import type { ReactNode } from "react";
 import "../src/styles/index.css";
+import { Providers } from "@/app/providers";
 
 export const metadata = {
   title: "FinDash Cash Flow Tracker",
@@ -8,8 +9,10 @@ export const metadata = {
 
 export default function RootLayout({ children }: { children: ReactNode }) {
   return (
-    <html lang="en">
-      <body>{children}</body>
+    <html lang="en" suppressHydrationWarning>
+      <body>
+        <Providers>{children}</Providers>
+      </body>
     </html>
   );
 }
