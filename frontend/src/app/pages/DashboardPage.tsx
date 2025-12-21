@@ -9,7 +9,7 @@ import { formatIST } from '../../shared/lib/timezone';
 import { DateRangeFilter, PresetOption } from '../../shared/ui/filters/DateRangeFilter';
 import { PageLayout } from '../../shared/ui/layout/PageLayout';
 
-const COLORS = ['#6366f1', '#10b981', '#f59e0b', '#ef4444', '#8b5cf6', '#ec4899'];
+const COLORS = ['var(--chart-1)', 'var(--chart-2)', 'var(--chart-3)', 'var(--chart-4)', 'var(--chart-5)', 'var(--primary)'];
 
 export function DashboardPage() {
   const { user, logout, transactions, setCurrentPage } = useApp();
@@ -130,14 +130,14 @@ export function DashboardPage() {
         <>
           <button
             onClick={() => setCurrentPage('new-account')}
-            className="flex items-center gap-2 px-4 py-2 text-gray-700 hover:bg-gray-100 rounded-lg transition-colors"
+            className="flex items-center gap-2 px-4 py-2 text-muted-foreground hover:text-foreground hover:bg-muted/60 rounded-lg transition-colors"
           >
             <Users className="w-5 h-5" />
             <span>New Account</span>
           </button>
           <button
             onClick={() => setCurrentPage('add-investor')}
-            className="flex items-center gap-2 px-4 py-2 text-gray-700 hover:bg-gray-100 rounded-lg transition-colors"
+            className="flex items-center gap-2 px-4 py-2 text-muted-foreground hover:text-foreground hover:bg-muted/60 rounded-lg transition-colors"
           >
             <UserPlus className="w-5 h-5" />
             <span>Add Investor</span>
@@ -147,7 +147,7 @@ export function DashboardPage() {
 
       <button
         onClick={() => setCurrentPage('insights')}
-        className="flex items-center gap-2 px-4 py-2 text-gray-700 hover:bg-gray-100 rounded-lg transition-colors"
+        className="flex items-center gap-2 px-4 py-2 text-muted-foreground hover:text-foreground hover:bg-muted/60 rounded-lg transition-colors"
       >
         <BarChart3 className="w-5 h-5" />
         <span>Insights</span>
@@ -155,7 +155,7 @@ export function DashboardPage() {
 
       <button
         onClick={() => setCurrentPage('history')}
-        className="flex items-center gap-2 px-4 py-2 text-gray-700 hover:bg-gray-100 rounded-lg transition-colors"
+        className="flex items-center gap-2 px-4 py-2 text-muted-foreground hover:text-foreground hover:bg-muted/60 rounded-lg transition-colors"
       >
         <History className="w-5 h-5" />
         <span>Transactions</span>
@@ -164,7 +164,7 @@ export function DashboardPage() {
       {(user?.role === 'admin' || user?.role === 'partner') && (
         <button
           onClick={() => setCurrentPage('add-entry')}
-          className="flex items-center gap-2 px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition-colors"
+          className="flex items-center gap-2 px-4 py-2 bg-primary text-primary-foreground rounded-lg hover:bg-primary/90 transition-colors"
         >
           <Plus className="w-5 h-5" />
           <span>Add Entry</span>
@@ -173,7 +173,7 @@ export function DashboardPage() {
 
       <button
         onClick={logout}
-        className="flex items-center gap-2 px-4 py-2 text-red-600 hover:bg-red-50 rounded-lg transition-colors"
+        className="flex items-center gap-2 px-4 py-2 text-destructive hover:bg-destructive/10 rounded-lg transition-colors"
       >
         <LogOut className="w-5 h-5" />
         <span>Logout</span>
@@ -202,83 +202,83 @@ export function DashboardPage() {
       {/* Summary Cards - 5 cards */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4 mb-8">
           {/* Total Cash In */}
-          <div className="bg-gradient-to-br from-purple-500 to-purple-600 rounded-xl shadow-sm p-6 text-white">
+          <div className="bg-[linear-gradient(135deg,var(--primary),var(--chart-3))] rounded-xl shadow-sm p-6 text-primary-foreground">
             <div className="flex items-center justify-between mb-2">
-              <p className="text-purple-100">Total Cash In</p>
-              <div className="p-2 bg-white/20 rounded-lg">
+              <p className="text-primary-foreground/80">Total Cash In</p>
+              <div className="p-2 bg-primary-foreground/15 rounded-lg">
                 <DollarSign className="w-5 h-5" />
               </div>
             </div>
             <p className="text-2xl">
               {summaryLoading ? 'Loading…' : `₹${summaryValues.totalCashIn.toLocaleString()}`}
             </p>
-            <p className="text-sm text-purple-100 mt-1">Investor Capital</p>
+            <p className="text-sm text-primary-foreground/80 mt-1">Investor Capital</p>
           </div>
 
           {/* Total Purchases */}
-          <div className="bg-white rounded-xl shadow-sm p-6">
+          <div className="bg-card border border-border/70 rounded-xl shadow-sm p-6">
             <div className="flex items-center justify-between mb-2">
-              <p className="text-gray-600">Total Purchases</p>
-              <div className="p-2 bg-red-50 rounded-lg">
-                <TrendingDown className="w-5 h-5 text-red-600" />
+              <p className="text-muted-foreground">Total Purchases</p>
+              <div className="p-2 bg-secondary rounded-lg">
+                <TrendingDown className="w-5 h-5 text-[color:var(--chart-4)]" />
               </div>
             </div>
-            <p className="text-gray-900 text-2xl">
+            <p className="text-foreground text-2xl">
               {summaryLoading ? 'Loading…' : `₹${summaryValues.purchases.toLocaleString()}`}
             </p>
-            <p className="text-sm text-gray-500 mt-1">{filterLabel}</p>
+            <p className="text-sm text-muted-foreground mt-1">{filterLabel}</p>
           </div>
 
           {/* Total Sales */}
-          <div className="bg-white rounded-xl shadow-sm p-6">
+          <div className="bg-card border border-border/70 rounded-xl shadow-sm p-6">
             <div className="flex items-center justify-between mb-2">
-              <p className="text-gray-600">Total Sales</p>
-              <div className="p-2 bg-green-50 rounded-lg">
-                <TrendingUp className="w-5 h-5 text-green-600" />
+              <p className="text-muted-foreground">Total Sales</p>
+              <div className="p-2 bg-secondary rounded-lg">
+                <TrendingUp className="w-5 h-5 text-primary" />
               </div>
             </div>
-            <p className="text-gray-900 text-2xl">
+            <p className="text-foreground text-2xl">
               {summaryLoading ? 'Loading…' : `₹${summaryValues.sales.toLocaleString()}`}
             </p>
-            <p className="text-sm text-gray-500 mt-1">{filterLabel}</p>
+            <p className="text-sm text-muted-foreground mt-1">{filterLabel}</p>
           </div>
 
           {/* Total Expenses */}
-          <div className="bg-white rounded-xl shadow-sm p-6">
+          <div className="bg-card border border-border/70 rounded-xl shadow-sm p-6">
             <div className="flex items-center justify-between mb-2">
-              <p className="text-gray-600">Total Expenses</p>
-              <div className="p-2 bg-orange-50 rounded-lg">
-                <DollarSign className="w-5 h-5 text-orange-600" />
+              <p className="text-muted-foreground">Total Expenses</p>
+              <div className="p-2 bg-secondary rounded-lg">
+                <DollarSign className="w-5 h-5 text-accent" />
               </div>
             </div>
-            <p className="text-gray-900 text-2xl">
+            <p className="text-foreground text-2xl">
               {summaryLoading ? 'Loading…' : `₹${summaryValues.expenses.toLocaleString()}`}
             </p>
-            <p className="text-sm text-gray-500 mt-1">{filterLabel}</p>
+            <p className="text-sm text-muted-foreground mt-1">{filterLabel}</p>
           </div>
 
           {/* Profit/Loss */}
-          <div className="bg-white rounded-xl shadow-sm p-6">
+          <div className="bg-card border border-border/70 rounded-xl shadow-sm p-6">
             <div className="flex items-center justify-between mb-2">
-              <p className="text-gray-600">Profit / Loss</p>
-              <div className={`p-2 rounded-lg ${summaryValues.profit >= 0 ? 'bg-green-50' : 'bg-red-50'}`}>
-                <DollarSign className={`w-5 h-5 ${summaryValues.profit >= 0 ? 'text-green-600' : 'text-red-600'}`} />
+              <p className="text-muted-foreground">Profit / Loss</p>
+              <div className={`p-2 rounded-lg ${summaryValues.profit >= 0 ? 'bg-primary/10' : 'bg-destructive/10'}`}>
+                <DollarSign className={`w-5 h-5 ${summaryValues.profit >= 0 ? 'text-primary' : 'text-destructive'}`} />
               </div>
             </div>
-            <p className={`text-2xl ${summaryValues.profit >= 0 ? 'text-green-600' : 'text-red-600'}`}>
+            <p className={`text-2xl ${summaryValues.profit >= 0 ? 'text-primary' : 'text-destructive'}`}>
               {summaryLoading ? 'Loading…' : `₹${Math.abs(summaryValues.profit).toLocaleString()}`}
             </p>
-            <p className="text-sm text-gray-500 mt-1">{filterLabel}</p>
+            <p className="text-sm text-muted-foreground mt-1">{filterLabel}</p>
           </div>
         </div>
 
         {summaryError && (
-          <div className="bg-red-50 border border-red-100 rounded-xl p-4 mb-6 text-red-700 flex items-start gap-3">
+          <div className="bg-destructive/10 border border-destructive/20 rounded-xl p-4 mb-6 text-destructive flex items-start gap-3">
             <DollarSign className="w-5 h-5 mt-0.5" />
             <div>
               <p className="font-medium">Unable to load summary.</p>
               <p className="text-sm">{summaryErrorDetails?.message ?? 'Please try again.'}</p>
-              <button onClick={refetchSummary} className="mt-2 text-indigo-600 hover:text-indigo-700 text-sm">
+              <button onClick={refetchSummary} className="mt-2 text-primary hover:text-primary/80 text-sm">
                 Retry
               </button>
             </div>
@@ -288,8 +288,8 @@ export function DashboardPage() {
         {/* Charts Section */}
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-8">
           {/* Doughnut Chart - Purchase vs Sales vs Expenses */}
-          <div className="bg-white rounded-xl shadow-sm p-6">
-            <h2 className="text-gray-900 mb-4">Overview</h2>
+          <div className="bg-card border border-border/70 rounded-xl shadow-sm p-6">
+            <h2 className="text-foreground mb-4">Overview</h2>
             {doughnutData.length > 0 ? (
               <ResponsiveContainer width="100%" height={250}>
                 <PieChart>
@@ -311,17 +311,17 @@ export function DashboardPage() {
                 </PieChart>
               </ResponsiveContainer>
             ) : (
-              <div className="h-[250px] flex items-center justify-center text-gray-500">
+              <div className="h-[250px] flex items-center justify-center text-muted-foreground">
                 No data available
               </div>
             )}
           </div>
 
           {/* Pie Chart - Purchase by Product */}
-          <div className="bg-white rounded-xl shadow-sm p-6">
-            <h2 className="text-gray-900 mb-4">Purchase by Product</h2>
+          <div className="bg-card border border-border/70 rounded-xl shadow-sm p-6">
+            <h2 className="text-foreground mb-4">Purchase by Product</h2>
             {productLoading ? (
-              <div className="h-[250px] flex items-center justify-center text-gray-500">Loading...</div>
+              <div className="h-[250px] flex items-center justify-center text-muted-foreground">Loading...</div>
             ) : purchaseByProductData.length > 0 ? (
               <ResponsiveContainer width="100%" height={250}>
                 <PieChart>
@@ -341,17 +341,17 @@ export function DashboardPage() {
                 </PieChart>
               </ResponsiveContainer>
             ) : (
-              <div className="h-[250px] flex items-center justify-center text-gray-500">
+              <div className="h-[250px] flex items-center justify-center text-muted-foreground">
                 No purchases yet
               </div>
             )}
           </div>
 
           {/* Pie Chart - Sales by Product */}
-          <div className="bg-white rounded-xl shadow-sm p-6">
-            <h2 className="text-gray-900 mb-4">Sales by Product</h2>
+          <div className="bg-card border border-border/70 rounded-xl shadow-sm p-6">
+            <h2 className="text-foreground mb-4">Sales by Product</h2>
             {productLoading ? (
-              <div className="h-[250px] flex items-center justify-center text-gray-500">Loading...</div>
+              <div className="h-[250px] flex items-center justify-center text-muted-foreground">Loading...</div>
             ) : salesByProductData.length > 0 ? (
               <ResponsiveContainer width="100%" height={250}>
                 <PieChart>
@@ -371,7 +371,7 @@ export function DashboardPage() {
                 </PieChart>
               </ResponsiveContainer>
             ) : (
-              <div className="h-[250px] flex items-center justify-center text-gray-500">
+              <div className="h-[250px] flex items-center justify-center text-muted-foreground">
                 No sales yet
               </div>
             )}
@@ -379,61 +379,59 @@ export function DashboardPage() {
         </div>
 
         {/* Recent Transactions */}
-        <div className="bg-white rounded-xl shadow-sm p-6 mb-8">
+        <div className="bg-card border border-border/70 rounded-xl shadow-sm p-6 mb-8">
           <div className="flex items-center justify-between mb-6">
-            <h2 className="text-gray-900">Recent Transactions</h2>
+            <h2 className="text-foreground">Recent Transactions</h2>
             <button
               onClick={() => setCurrentPage('history')}
-              className="text-indigo-600 hover:text-indigo-700 text-sm"
+              className="text-primary hover:text-primary/80 text-sm"
             >
               View More →
             </button>
           </div>
 
           {recentTransactions.length === 0 ? (
-            <div className="text-center py-8 text-gray-500">
+            <div className="text-center py-8 text-muted-foreground">
               No transactions yet
             </div>
           ) : (
             <div className="space-y-3">
               {recentTransactions.map((transaction) => (
-                <div key={transaction.id} className="flex items-center justify-between p-4 bg-gray-50 rounded-lg hover:bg-gray-100 transition-colors">
+                <div key={transaction.id} className="flex items-center justify-between p-4 bg-muted/40 rounded-lg hover:bg-muted/60 transition-colors">
                   <div className="flex items-center gap-4">
                     <div className={`p-2 rounded-lg ${
-                      transaction.type === 'buy' ? 'bg-red-100' :
-                      transaction.type === 'sell' ? 'bg-green-100' :
-                      'bg-orange-100'
+                      transaction.type === 'buy' ? 'bg-destructive/10' :
+                      transaction.type === 'sell' ? 'bg-primary/10' :
+                      'bg-accent/10'
                     }`}>
                       {transaction.type === 'buy' ? (
-                        <TrendingDown className={`w-5 h-5 text-red-600`} />
+                        <TrendingDown className="w-5 h-5 text-destructive" />
                       ) : transaction.type === 'sell' ? (
-                        <TrendingUp className={`w-5 h-5 text-green-600`} />
+                        <TrendingUp className="w-5 h-5 text-primary" />
                       ) : (
-                        <DollarSign className={`w-5 h-5 text-orange-600`} />
+                        <DollarSign className="w-5 h-5 text-accent" />
                       )}
                     </div>
                     <div>
-                      <p className="text-gray-900">
+                      <p className="text-foreground">
                         {transaction.type === 'expense' 
                           ? transaction.expenseDescription 
                           : transaction.productName}
                       </p>
-                      <p className="text-sm text-gray-500">
+                      <p className="text-sm text-muted-foreground">
                         {formatIST(transaction.date, { includeTime: true })}
                       </p>
                     </div>
                   </div>
                   <div className="text-right">
                     <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs mb-1 ${
-                      transaction.type === 'buy' ? 'bg-red-100 text-red-800' :
-                      transaction.type === 'sell' ? 'bg-green-100 text-green-800' :
-                      'bg-orange-100 text-orange-800'
+                      transaction.type === 'buy' ? 'bg-destructive/10 text-destructive' :
+                      transaction.type === 'sell' ? 'bg-primary/10 text-primary' :
+                      'bg-accent/10 text-accent'
                     }`}>
                       {transaction.type.charAt(0).toUpperCase() + transaction.type.slice(1)}
                     </span>
-                    <p className={`${
-                      transaction.type === 'sell' ? 'text-green-600' : 'text-gray-900'
-                    }`}>
+                    <p className={transaction.type === 'sell' ? 'text-primary' : 'text-foreground'}>
                       ₹{transaction.totalAmount.toLocaleString()}
                     </p>
                   </div>
@@ -444,24 +442,24 @@ export function DashboardPage() {
         </div>
 
         {/* Quick Insights */}
-          <div className="bg-gradient-to-r from-indigo-500 to-purple-600 rounded-xl shadow-sm p-6 text-white">
+          <div className="bg-[linear-gradient(120deg,var(--primary),var(--chart-3))] rounded-xl shadow-sm p-6 text-primary-foreground">
             <h2 className="mb-4">Quick Insights</h2>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <div className="bg-white/10 rounded-lg p-4 backdrop-blur-sm">
-                <p className="text-indigo-100 mb-1">Most Profitable Product {filterLabel}</p>
+              <div className="bg-primary-foreground/12 rounded-lg p-4 backdrop-blur-sm">
+                <p className="text-primary-foreground/80 mb-1">Most Profitable Product {filterLabel}</p>
                 <p className="text-xl">
                   {insights.mostProfitable.product}
                 </p>
-                <p className="text-sm text-indigo-100 mt-1">
+                <p className="text-sm text-primary-foreground/80 mt-1">
                   Profit: ₹{Number(insights.mostProfitable.profit || 0).toLocaleString()}
                 </p>
               </div>
-              <div className="bg-white/10 rounded-lg p-4 backdrop-blur-sm">
-                <p className="text-indigo-100 mb-1">Least Profitable Product {filterLabel}</p>
+              <div className="bg-primary-foreground/12 rounded-lg p-4 backdrop-blur-sm">
+                <p className="text-primary-foreground/80 mb-1">Least Profitable Product {filterLabel}</p>
                 <p className="text-xl">
                   {insights.leastProfitable.product}
                 </p>
-                <p className="text-sm text-indigo-100 mt-1">
+                <p className="text-sm text-primary-foreground/80 mt-1">
                   {insights.leastProfitable.profit >= 0 ? 'Profit' : 'Loss'}: ₹
                   {Math.abs(Number(insights.leastProfitable.profit || 0)).toLocaleString()}
                 </p>

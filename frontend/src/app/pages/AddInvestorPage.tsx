@@ -83,16 +83,16 @@ export function AddInvestorPage() {
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
           {/* Left Column - Actions */}
           <div className="lg:col-span-1">
-            <div className="bg-white rounded-xl shadow-sm p-6 sticky top-24">
-              <h2 className="text-gray-900 mb-4">Actions</h2>
+            <div className="bg-card border border-border/70 rounded-xl shadow-sm p-6 sticky top-24">
+              <h2 className="text-foreground mb-4">Actions</h2>
               
               <div className="space-y-3">
                 <button
                   onClick={() => setMode('add')}
                   className={`w-full flex items-center gap-3 px-4 py-3 rounded-lg transition-colors ${
                     mode === 'add'
-                      ? 'bg-indigo-600 text-white'
-                      : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                      ? 'bg-primary text-primary-foreground'
+                      : 'bg-secondary text-secondary-foreground hover:bg-secondary/80'
                   }`}
                 >
                   <UserPlus className="w-5 h-5" />
@@ -103,8 +103,8 @@ export function AddInvestorPage() {
                   onClick={() => setMode('select')}
                   className={`w-full flex items-center gap-3 px-4 py-3 rounded-lg transition-colors ${
                     mode === 'select'
-                      ? 'bg-indigo-600 text-white'
-                      : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                      ? 'bg-primary text-primary-foreground'
+                      : 'bg-secondary text-secondary-foreground hover:bg-secondary/80'
                   }`}
                 >
                   <DollarSign className="w-5 h-5" />
@@ -114,24 +114,24 @@ export function AddInvestorPage() {
 
               {/* Selected Investor Quick Info */}
               {selectedInvestor && mode !== 'add' && (
-                <div className="mt-6 p-4 bg-indigo-50 rounded-lg border border-indigo-200">
-                  <p className="text-sm text-indigo-600 mb-1">Selected Investor</p>
-                  <p className="text-indigo-900">{selectedInvestor.name}</p>
-                  <p className="text-sm text-indigo-700 mt-2">
+                <div className="mt-6 p-4 bg-primary/10 rounded-lg border border-primary/20">
+                  <p className="text-sm text-primary mb-1">Selected Investor</p>
+                  <p className="text-foreground">{selectedInvestor.name}</p>
+                  <p className="text-sm text-primary/80 mt-2">
                     Net Investment: ${selectedInvestor.netInvestment.toLocaleString()}
                   </p>
                   
                   <div className="mt-4 space-y-2">
                     <button
                       onClick={() => setMode('investment')}
-                      className="w-full flex items-center justify-center gap-2 px-3 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors"
+                      className="w-full flex items-center justify-center gap-2 px-3 py-2 bg-primary text-primary-foreground rounded-lg hover:bg-primary/90 transition-colors"
                     >
                       <TrendingUp className="w-4 h-4" />
                       Add Investment
                     </button>
                     <button
                       onClick={() => setMode('withdrawal')}
-                      className="w-full flex items-center justify-center gap-2 px-3 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors"
+                      className="w-full flex items-center justify-center gap-2 px-3 py-2 bg-destructive text-destructive-foreground rounded-lg hover:bg-destructive/90 transition-colors"
                     >
                       <TrendingDown className="w-4 h-4" />
                       Add Withdrawal
@@ -146,11 +146,11 @@ export function AddInvestorPage() {
           <div className="lg:col-span-2">
             {/* Add New Investor Form */}
             {mode === 'add' && (
-              <div className="bg-white rounded-xl shadow-sm p-6">
-                <h2 className="text-gray-900 mb-6">Add New Investor</h2>
+              <div className="bg-card border border-border/70 rounded-xl shadow-sm p-6">
+                <h2 className="text-foreground mb-6">Add New Investor</h2>
                 <form onSubmit={handleAddInvestor}>
                   <div className="mb-6">
-                    <label htmlFor="investorName" className="block text-gray-700 mb-2">
+                    <label htmlFor="investorName" className="block text-muted-foreground mb-2">
                       Investor Name
                     </label>
                     <input
@@ -158,7 +158,7 @@ export function AddInvestorPage() {
                       type="text"
                       value={newInvestorName}
                       onChange={(e) => setNewInvestorName(e.target.value)}
-                      className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
+                      className="w-full px-4 py-3 border border-input bg-input-background text-foreground rounded-lg focus-visible:outline-none focus-visible:ring-[3px] focus-visible:ring-ring/40"
                       placeholder="Enter investor name"
                       required
                     />
@@ -167,7 +167,7 @@ export function AddInvestorPage() {
                   <div className="flex gap-3">
                     <button
                       type="submit"
-                      className="flex-1 bg-indigo-600 text-white py-3 rounded-lg hover:bg-indigo-700 transition-colors"
+                      className="flex-1 bg-primary text-primary-foreground py-3 rounded-lg hover:bg-primary/90 transition-colors"
                     >
                       Add Investor
                     </button>
@@ -177,7 +177,7 @@ export function AddInvestorPage() {
                         setMode('select');
                         setNewInvestorName('');
                       }}
-                      className="flex-1 bg-gray-100 text-gray-700 py-3 rounded-lg hover:bg-gray-200 transition-colors"
+                      className="flex-1 bg-secondary text-secondary-foreground py-3 rounded-lg hover:bg-secondary/80 transition-colors"
                     >
                       Cancel
                     </button>
@@ -188,11 +188,11 @@ export function AddInvestorPage() {
 
             {/* Add Investment Form */}
             {mode === 'investment' && selectedInvestor && (
-              <div className="bg-white rounded-xl shadow-sm p-6">
-                <h2 className="text-gray-900 mb-6">Add Investment</h2>
+              <div className="bg-card border border-border/70 rounded-xl shadow-sm p-6">
+                <h2 className="text-foreground mb-6">Add Investment</h2>
                 <form onSubmit={handleAddInvestment}>
                   <div className="mb-6">
-                    <label htmlFor="investAmount" className="block text-gray-700 mb-2">
+                    <label htmlFor="investAmount" className="block text-muted-foreground mb-2">
                       Investment Amount
                     </label>
                     <input
@@ -202,14 +202,14 @@ export function AddInvestorPage() {
                       step="0.01"
                       value={amount}
                       onChange={(e) => setAmount(e.target.value)}
-                      className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
+                      className="w-full px-4 py-3 border border-input bg-input-background text-foreground rounded-lg focus-visible:outline-none focus-visible:ring-[3px] focus-visible:ring-ring/40"
                       placeholder="0.00"
                       required
                     />
                   </div>
 
                   <div className="mb-6">
-                    <label htmlFor="investNotes" className="block text-gray-700 mb-2">
+                    <label htmlFor="investNotes" className="block text-muted-foreground mb-2">
                       Notes (Optional)
                     </label>
                     <textarea
@@ -217,7 +217,7 @@ export function AddInvestorPage() {
                       value={notes}
                       onChange={(e) => setNotes(e.target.value)}
                       rows={3}
-                      className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
+                      className="w-full px-4 py-3 border border-input bg-input-background text-foreground rounded-lg focus-visible:outline-none focus-visible:ring-[3px] focus-visible:ring-ring/40"
                       placeholder="Additional notes..."
                     />
                   </div>
@@ -225,7 +225,7 @@ export function AddInvestorPage() {
                   <div className="flex gap-3">
                     <button
                       type="submit"
-                      className="flex-1 bg-green-600 text-white py-3 rounded-lg hover:bg-green-700 transition-colors"
+                      className="flex-1 bg-primary text-primary-foreground py-3 rounded-lg hover:bg-primary/90 transition-colors"
                     >
                       Add Investment
                     </button>
@@ -236,7 +236,7 @@ export function AddInvestorPage() {
                         setAmount('');
                         setNotes('');
                       }}
-                      className="flex-1 bg-gray-100 text-gray-700 py-3 rounded-lg hover:bg-gray-200 transition-colors"
+                      className="flex-1 bg-secondary text-secondary-foreground py-3 rounded-lg hover:bg-secondary/80 transition-colors"
                     >
                       Cancel
                     </button>
@@ -247,16 +247,16 @@ export function AddInvestorPage() {
 
             {/* Add Withdrawal Form */}
             {mode === 'withdrawal' && selectedInvestor && (
-              <div className="bg-white rounded-xl shadow-sm p-6">
-                <h2 className="text-gray-900 mb-6">Add Withdrawal</h2>
-                <div className="mb-6 p-4 bg-yellow-50 rounded-lg border border-yellow-200">
-                  <p className="text-sm text-yellow-800">
+              <div className="bg-card border border-border/70 rounded-xl shadow-sm p-6">
+                <h2 className="text-foreground mb-6">Add Withdrawal</h2>
+                <div className="mb-6 p-4 bg-accent/10 rounded-lg border border-accent/20">
+                  <p className="text-sm text-accent">
                     Available for withdrawal: ${selectedInvestor.netInvestment.toLocaleString()}
                   </p>
                 </div>
                 <form onSubmit={handleAddWithdrawal}>
                   <div className="mb-6">
-                    <label htmlFor="withdrawAmount" className="block text-gray-700 mb-2">
+                    <label htmlFor="withdrawAmount" className="block text-muted-foreground mb-2">
                       Withdrawal Amount
                     </label>
                     <input
@@ -267,14 +267,14 @@ export function AddInvestorPage() {
                       step="0.01"
                       value={amount}
                       onChange={(e) => setAmount(e.target.value)}
-                      className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
+                      className="w-full px-4 py-3 border border-input bg-input-background text-foreground rounded-lg focus-visible:outline-none focus-visible:ring-[3px] focus-visible:ring-ring/40"
                       placeholder="0.00"
                       required
                     />
                   </div>
 
                   <div className="mb-6">
-                    <label htmlFor="withdrawNotes" className="block text-gray-700 mb-2">
+                    <label htmlFor="withdrawNotes" className="block text-muted-foreground mb-2">
                       Notes (Optional)
                     </label>
                     <textarea
@@ -282,7 +282,7 @@ export function AddInvestorPage() {
                       value={notes}
                       onChange={(e) => setNotes(e.target.value)}
                       rows={3}
-                      className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
+                      className="w-full px-4 py-3 border border-input bg-input-background text-foreground rounded-lg focus-visible:outline-none focus-visible:ring-[3px] focus-visible:ring-ring/40"
                       placeholder="Additional notes..."
                     />
                   </div>
@@ -290,7 +290,7 @@ export function AddInvestorPage() {
                   <div className="flex gap-3">
                     <button
                       type="submit"
-                      className="flex-1 bg-red-600 text-white py-3 rounded-lg hover:bg-red-700 transition-colors"
+                      className="flex-1 bg-destructive text-destructive-foreground py-3 rounded-lg hover:bg-destructive/90 transition-colors"
                     >
                       Process Withdrawal
                     </button>
@@ -301,7 +301,7 @@ export function AddInvestorPage() {
                         setAmount('');
                         setNotes('');
                       }}
-                      className="flex-1 bg-gray-100 text-gray-700 py-3 rounded-lg hover:bg-gray-200 transition-colors"
+                      className="flex-1 bg-secondary text-secondary-foreground py-3 rounded-lg hover:bg-secondary/80 transition-colors"
                     >
                       Cancel
                     </button>
@@ -312,51 +312,51 @@ export function AddInvestorPage() {
 
             {/* Investor List/Table */}
             {mode === 'select' && (
-              <div className="bg-white rounded-xl shadow-sm p-6">
-                <h2 className="text-gray-900 mb-6">All Investors</h2>
+              <div className="bg-card border border-border/70 rounded-xl shadow-sm p-6">
+                <h2 className="text-foreground mb-6">All Investors</h2>
                 
                 {investors.length === 0 ? (
                   <div className="text-center py-12">
-                    <p className="text-gray-500">No investors yet. Add your first investor to get started.</p>
+                    <p className="text-muted-foreground">No investors yet. Add your first investor to get started.</p>
                   </div>
                 ) : (
                   <div className="overflow-x-auto">
                     <table className="w-full">
                       <thead>
-                        <tr className="border-b border-gray-200">
-                          <th className="text-left py-3 px-4 text-gray-700">Investor Name</th>
-                          <th className="text-right py-3 px-4 text-gray-700">Total Invested</th>
-                          <th className="text-right py-3 px-4 text-gray-700">Total Withdrawn</th>
-                          <th className="text-right py-3 px-4 text-gray-700">Net Investment</th>
-                          <th className="text-right py-3 px-4 text-gray-700">Last Activity</th>
-                          <th className="text-center py-3 px-4 text-gray-700">Action</th>
+                        <tr className="border-b border-border/70">
+                          <th className="text-left py-3 px-4 text-muted-foreground">Investor Name</th>
+                          <th className="text-right py-3 px-4 text-muted-foreground">Total Invested</th>
+                          <th className="text-right py-3 px-4 text-muted-foreground">Total Withdrawn</th>
+                          <th className="text-right py-3 px-4 text-muted-foreground">Net Investment</th>
+                          <th className="text-right py-3 px-4 text-muted-foreground">Last Activity</th>
+                          <th className="text-center py-3 px-4 text-muted-foreground">Action</th>
                         </tr>
                       </thead>
                       <tbody>
                         {investors.map((investor) => (
                           <tr 
                             key={investor.id} 
-                            className={`border-b border-gray-100 hover:bg-gray-50 ${
-                              selectedInvestorId === investor.id ? 'bg-indigo-50' : ''
+                            className={`border-b border-border/50 hover:bg-muted/40 ${
+                              selectedInvestorId === investor.id ? 'bg-primary/10' : ''
                             }`}
                           >
-                            <td className="py-3 px-4 text-gray-900">{investor.name}</td>
-                            <td className="py-3 px-4 text-right text-green-600">
+                            <td className="py-3 px-4 text-foreground">{investor.name}</td>
+                            <td className="py-3 px-4 text-right text-primary">
                               ₹{investor.totalInvested.toLocaleString()}
                             </td>
-                            <td className="py-3 px-4 text-right text-red-600">
+                            <td className="py-3 px-4 text-right text-destructive">
                               ₹{investor.totalWithdrawn.toLocaleString()}
                             </td>
-                            <td className="py-3 px-4 text-right text-indigo-600">
+                            <td className="py-3 px-4 text-right text-primary">
                               ₹{investor.netInvestment.toLocaleString()}
                             </td>
-                            <td className="py-3 px-4 text-right text-gray-600 text-sm">
+                            <td className="py-3 px-4 text-right text-muted-foreground text-sm">
                               {formatIST(investor.lastActivityDate)}
                             </td>
                             <td className="py-3 px-4 text-center">
                               <button
                                 onClick={() => setSelectedInvestorId(investor.id)}
-                                className="px-3 py-1 bg-indigo-600 text-white rounded hover:bg-indigo-700 transition-colors text-sm"
+                                className="px-3 py-1 bg-primary text-primary-foreground rounded hover:bg-primary/90 transition-colors text-sm"
                               >
                                 Select
                               </button>

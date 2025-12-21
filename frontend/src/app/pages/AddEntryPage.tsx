@@ -157,18 +157,18 @@ export function AddEntryPage() {
       }}
       contentClassName="max-w-3xl"
     >
-      <form onSubmit={handleSubmit} className="bg-white rounded-xl shadow-sm p-6">
+      <form onSubmit={handleSubmit} className="bg-card border border-border/70 rounded-xl shadow-sm p-6">
           {/* Entry Type Toggle */}
           <div className="mb-6">
-            <label className="block text-gray-700 mb-3">Entry Type</label>
+            <label className="block text-muted-foreground mb-3">Entry Type</label>
             <div className="flex gap-3">
               <button
                 type="button"
                 onClick={() => setEntryType('buy')}
                 className={`flex-1 flex items-center justify-center gap-2 py-3 px-4 rounded-lg border-2 transition-colors ${
                   entryType === 'buy'
-                    ? 'border-red-500 bg-red-50 text-red-700'
-                    : 'border-gray-200 text-gray-600 hover:border-gray-300'
+                    ? 'border-destructive/40 bg-destructive/10 text-destructive'
+                    : 'border-border/70 text-muted-foreground hover:border-border'
                 }`}
               >
                 <ShoppingCart className="w-5 h-5" />
@@ -179,8 +179,8 @@ export function AddEntryPage() {
                 onClick={() => setEntryType('sell')}
                 className={`flex-1 flex items-center justify-center gap-2 py-3 px-4 rounded-lg border-2 transition-colors ${
                   entryType === 'sell'
-                    ? 'border-green-500 bg-green-50 text-green-700'
-                    : 'border-gray-200 text-gray-600 hover:border-gray-300'
+                    ? 'border-primary/40 bg-primary/10 text-primary'
+                    : 'border-border/70 text-muted-foreground hover:border-border'
                 }`}
               >
                 <DollarSign className="w-5 h-5" />
@@ -191,8 +191,8 @@ export function AddEntryPage() {
                 onClick={() => setEntryType('expense')}
                 className={`flex-1 flex items-center justify-center gap-2 py-3 px-4 rounded-lg border-2 transition-colors ${
                   entryType === 'expense'
-                    ? 'border-orange-500 bg-orange-50 text-orange-700'
-                    : 'border-gray-200 text-gray-600 hover:border-gray-300'
+                    ? 'border-accent/40 bg-accent/10 text-accent'
+                    : 'border-border/70 text-muted-foreground hover:border-border'
                 }`}
               >
                 <Receipt className="w-5 h-5" />
@@ -206,26 +206,26 @@ export function AddEntryPage() {
             <>
               {/* Product Selection */}
               <div className="mb-6">
-                <label htmlFor="productSelection" className="block text-gray-700 mb-2">
+                <label htmlFor="productSelection" className="block text-muted-foreground mb-2">
                   {entryType === 'sell' ? 'Select Product' : 'Product'}
                 </label>
                 
                 {entryType === 'sell' ? (
                   productsLoading ? (
-                    <div className="p-4 bg-gray-50 border border-gray-200 rounded-lg flex items-center gap-3 text-gray-600">
+                    <div className="p-4 bg-muted/40 border border-border/70 rounded-lg flex items-center gap-3 text-muted-foreground">
                       <Loader2 className="w-4 h-4 animate-spin" />
                       <span>Loading products available for sale...</span>
                     </div>
                   ) : sellProductOptions.length === 0 ? (
-                    <div className="p-4 bg-yellow-50 border border-yellow-200 rounded-lg">
-                      <p className="text-yellow-800">No products available for sale. Please add purchases first.</p>
+                    <div className="p-4 bg-accent/10 border border-accent/20 rounded-lg">
+                      <p className="text-accent">No products available for sale. Please add purchases first.</p>
                     </div>
                   ) : (
                     <select
                       id="productSelection"
                       value={productName}
                       onChange={(e) => setProductName(e.target.value)}
-                      className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
+                      className="w-full px-4 py-3 border border-input bg-input-background text-foreground rounded-lg focus-visible:outline-none focus-visible:ring-[3px] focus-visible:ring-ring/40"
                       required
                       disabled={isSubmitting}
                     >
@@ -239,7 +239,7 @@ export function AddEntryPage() {
                   // Buy: Can select existing or create new
                   <>
                     {productsLoading && (
-                      <div className="p-3 bg-gray-50 border border-gray-200 rounded-lg flex items-center gap-2 text-gray-600 mb-3">
+                      <div className="p-3 bg-muted/40 border border-border/70 rounded-lg flex items-center gap-2 text-muted-foreground mb-3">
                         <Loader2 className="w-4 h-4 animate-spin" />
                         <span>Loading previously purchased products...</span>
                       </div>
@@ -249,7 +249,7 @@ export function AddEntryPage() {
                         id="productSelection"
                         value={isNewProduct ? '__new__' : productName}
                         onChange={(e) => handleProductSelection(e.target.value)}
-                        className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent mb-3"
+                        className="w-full px-4 py-3 border border-input bg-input-background text-foreground rounded-lg focus-visible:outline-none focus-visible:ring-[3px] focus-visible:ring-ring/40 mb-3"
                         disabled={isSubmitting}
                       >
                         <option value="">Select existing product</option>
@@ -265,7 +265,7 @@ export function AddEntryPage() {
                         type="text"
                         value={productName}
                         onChange={(e) => setProductName(e.target.value)}
-                        className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
+                        className="w-full px-4 py-3 border border-input bg-input-background text-foreground rounded-lg focus-visible:outline-none focus-visible:ring-[3px] focus-visible:ring-ring/40"
                         placeholder="Enter new product name"
                         required
                       />
@@ -277,7 +277,7 @@ export function AddEntryPage() {
               {/* Quantity and Quantity Type */}
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
                 <div>
-                  <label htmlFor="quantity" className="block text-gray-700 mb-2">
+                  <label htmlFor="quantity" className="block text-muted-foreground mb-2">
                     Quantity
                   </label>
                   <input
@@ -287,26 +287,26 @@ export function AddEntryPage() {
                     step="0.01"
                     value={quantity}
                     onChange={(e) => setQuantity(e.target.value)}
-                    className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
+                    className="w-full px-4 py-3 border border-input bg-input-background text-foreground rounded-lg focus-visible:outline-none focus-visible:ring-[3px] focus-visible:ring-ring/40"
                     placeholder="0"
                     required
                   />
                   {entryType === 'sell' && productName && (
-                    <p className="text-sm text-gray-500 mt-2">
+                    <p className="text-sm text-muted-foreground mt-2">
                       Available: {availableSellQuantity.toFixed(2)} {quantityType === 'custom' ? '' : quantityType}
                     </p>
                   )}
                 </div>
 
                 <div>
-                  <label htmlFor="quantityType" className="block text-gray-700 mb-2">
+                  <label htmlFor="quantityType" className="block text-muted-foreground mb-2">
                     Quantity Type
                   </label>
                   <select
                     id="quantityType"
                     value={quantityType}
                     onChange={(e) => setQuantityType(e.target.value as QuantityType)}
-                    className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
+                    className="w-full px-4 py-3 border border-input bg-input-background text-foreground rounded-lg focus-visible:outline-none focus-visible:ring-[3px] focus-visible:ring-ring/40"
                     required
                   >
                     <option value="unit">Unit</option>
@@ -321,7 +321,7 @@ export function AddEntryPage() {
               {/* Custom Quantity Type */}
               {quantityType === 'custom' && (
                 <div className="mb-6">
-                  <label htmlFor="customQuantityType" className="block text-gray-700 mb-2">
+                  <label htmlFor="customQuantityType" className="block text-muted-foreground mb-2">
                     Custom Quantity Type
                   </label>
                   <input
@@ -329,7 +329,7 @@ export function AddEntryPage() {
                     type="text"
                     value={customQuantityType}
                     onChange={(e) => setCustomQuantityType(e.target.value)}
-                    className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
+                    className="w-full px-4 py-3 border border-input bg-input-background text-foreground rounded-lg focus-visible:outline-none focus-visible:ring-[3px] focus-visible:ring-ring/40"
                     placeholder="e.g., Liter, Box, etc."
                     required
                   />
@@ -338,7 +338,7 @@ export function AddEntryPage() {
 
               {/* Price Per Unit */}
               <div className="mb-6">
-                <label htmlFor="pricePerUnit" className="block text-gray-700 mb-2">
+                <label htmlFor="pricePerUnit" className="block text-muted-foreground mb-2">
                   Price per Unit
                 </label>
                 <input
@@ -348,16 +348,16 @@ export function AddEntryPage() {
                   step="0.01"
                   value={pricePerUnit}
                   onChange={(e) => setPricePerUnit(e.target.value)}
-                  className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
+                  className="w-full px-4 py-3 border border-input bg-input-background text-foreground rounded-lg focus-visible:outline-none focus-visible:ring-[3px] focus-visible:ring-ring/40"
                   placeholder="0.00"
                   required
                 />
               </div>
 
               {/* Total Amount (Auto-calculated) */}
-              <div className="mb-6 p-4 bg-indigo-50 rounded-lg">
-                <p className="text-gray-700 mb-1">Total Amount</p>
-                <p className="text-indigo-600 text-2xl">
+              <div className="mb-6 p-4 bg-primary/10 rounded-lg border border-primary/15">
+                <p className="text-muted-foreground mb-1">Total Amount</p>
+                <p className="text-primary text-2xl">
                   ₹{isNaN(totalAmount) ? '0.00' : totalAmount.toFixed(2)}
                 </p>
               </div>
@@ -369,14 +369,14 @@ export function AddEntryPage() {
             <>
               {/* Expense Category */}
               <div className="mb-6">
-                <label htmlFor="expenseCategory" className="block text-gray-700 mb-2">
+                <label htmlFor="expenseCategory" className="block text-muted-foreground mb-2">
                   Expense Category
                 </label>
                 <select
                   id="expenseCategory"
                   value={expenseCategory}
                   onChange={(e) => setExpenseCategory(e.target.value as ExpenseCategory)}
-                  className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
+                  className="w-full px-4 py-3 border border-input bg-input-background text-foreground rounded-lg focus-visible:outline-none focus-visible:ring-[3px] focus-visible:ring-ring/40"
                   required
                 >
                   <option value="rent">Rent</option>
@@ -388,7 +388,7 @@ export function AddEntryPage() {
 
               {/* Expense Description */}
               <div className="mb-6">
-                <label htmlFor="expenseDescription" className="block text-gray-700 mb-2">
+                <label htmlFor="expenseDescription" className="block text-muted-foreground mb-2">
                   Description
                 </label>
                 <input
@@ -396,7 +396,7 @@ export function AddEntryPage() {
                   type="text"
                   value={expenseDescription}
                   onChange={(e) => setExpenseDescription(e.target.value)}
-                  className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
+                  className="w-full px-4 py-3 border border-input bg-input-background text-foreground rounded-lg focus-visible:outline-none focus-visible:ring-[3px] focus-visible:ring-ring/40"
                   placeholder="Enter expense description"
                   required
                 />
@@ -404,7 +404,7 @@ export function AddEntryPage() {
 
               {/* Expense Amount */}
               <div className="mb-6">
-                <label htmlFor="expenseAmount" className="block text-gray-700 mb-2">
+                <label htmlFor="expenseAmount" className="block text-muted-foreground mb-2">
                   Amount
                 </label>
                 <input
@@ -414,7 +414,7 @@ export function AddEntryPage() {
                   step="0.01"
                   value={expenseAmount}
                   onChange={(e) => setExpenseAmount(e.target.value)}
-                  className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
+                  className="w-full px-4 py-3 border border-input bg-input-background text-foreground rounded-lg focus-visible:outline-none focus-visible:ring-[3px] focus-visible:ring-ring/40"
                   placeholder="0.00"
                   required
                 />
@@ -425,7 +425,7 @@ export function AddEntryPage() {
           {/* Date and Time */}
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
             <div>
-              <label htmlFor="date" className="block text-gray-700 mb-2">
+              <label htmlFor="date" className="block text-muted-foreground mb-2">
                 Date
               </label>
               <input
@@ -433,13 +433,13 @@ export function AddEntryPage() {
                 type="date"
                 value={date}
                 onChange={(e) => setDate(e.target.value)}
-                className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
+                className="w-full px-4 py-3 border border-input bg-input-background text-foreground rounded-lg focus-visible:outline-none focus-visible:ring-[3px] focus-visible:ring-ring/40"
                 required
               />
             </div>
 
             <div>
-              <label htmlFor="time" className="block text-gray-700 mb-2">
+              <label htmlFor="time" className="block text-muted-foreground mb-2">
                 Time
               </label>
               <input
@@ -447,7 +447,7 @@ export function AddEntryPage() {
                 type="time"
                 value={time}
                 onChange={(e) => setTime(e.target.value)}
-                className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
+                className="w-full px-4 py-3 border border-input bg-input-background text-foreground rounded-lg focus-visible:outline-none focus-visible:ring-[3px] focus-visible:ring-ring/40"
                 required
               />
             </div>
@@ -455,7 +455,7 @@ export function AddEntryPage() {
 
           {/* Notes */}
           <div className="mb-6">
-            <label htmlFor="notes" className="block text-gray-700 mb-2">
+            <label htmlFor="notes" className="block text-muted-foreground mb-2">
               Notes (Optional)
             </label>
             <textarea
@@ -463,7 +463,7 @@ export function AddEntryPage() {
               value={notes}
               onChange={(e) => setNotes(e.target.value)}
               rows={3}
-              className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
+              className="w-full px-4 py-3 border border-input bg-input-background text-foreground rounded-lg focus-visible:outline-none focus-visible:ring-[3px] focus-visible:ring-ring/40"
               placeholder="Additional notes..."
             />
           </div>
@@ -472,7 +472,7 @@ export function AddEntryPage() {
           <div className="flex gap-4">
             <button
               type="submit"
-              className="flex-1 bg-indigo-600 text-white py-3 rounded-lg hover:bg-indigo-700 transition-colors flex items-center justify-center gap-2 disabled:opacity-60 disabled:cursor-not-allowed"
+              className="flex-1 bg-primary text-primary-foreground py-3 rounded-lg hover:bg-primary/90 transition-colors flex items-center justify-center gap-2 disabled:opacity-60 disabled:cursor-not-allowed"
               disabled={isSubmitting || (entryType === 'sell' && (productsLoading || sellProductOptions.length === 0))}
             >
               {isSubmitting && <Loader2 className="w-4 h-4 animate-spin" />}
@@ -481,7 +481,7 @@ export function AddEntryPage() {
             <button
               type="button"
               onClick={handleCancel}
-              className="flex-1 bg-gray-100 text-gray-700 py-3 rounded-lg hover:bg-gray-200 transition-colors"
+              className="flex-1 bg-secondary text-secondary-foreground py-3 rounded-lg hover:bg-secondary/80 transition-colors"
             >
               Cancel
             </button>

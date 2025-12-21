@@ -10,6 +10,7 @@ import { AddInvestorPage } from './pages/AddInvestorPage';
 import { NewAccountPage } from './pages/NewAccountPage';
 import { Toaster } from 'sonner';
 import { Loader2 } from 'lucide-react';
+import { ThemeToggle } from '../shared/ui/theme-toggle';
 
 const pageComponents: Record<AppPage, JSX.Element> = {
   login: <LoginPage />,
@@ -32,10 +33,10 @@ function AppRouter() {
 
   if (isBootstrapping) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-gray-300 dark:bg-background transition-colors">
-        <div className="bg-white rounded-xl shadow-md p-8 flex flex-col items-center gap-3">
-          <Loader2 className="w-8 h-8 text-indigo-600 animate-spin" />
-          <p className="text-gray-600">Loading workspace…</p>
+      <div className="min-h-screen flex items-center justify-center bg-background transition-colors">
+        <div className="bg-card border border-border/70 rounded-xl shadow-md p-8 flex flex-col items-center gap-3">
+          <Loader2 className="w-8 h-8 text-primary animate-spin" />
+          <p className="text-muted-foreground">Loading workspace…</p>
         </div>
       </div>
     );
@@ -53,6 +54,9 @@ export default function App() {
   return (
     <AuthProvider>
       <AppProvider>
+        <div className="fixed top-4 right-4 z-50">
+          <ThemeToggle />
+        </div>
         <AppRouter />
         <Toaster position="top-right" richColors />
       </AppProvider>

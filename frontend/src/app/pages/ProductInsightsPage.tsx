@@ -124,16 +124,16 @@ export function ProductInsightsPage() {
 
 
         {showError && (
-          <div className="bg-red-50 border border-red-100 rounded-xl p-4 mb-6 flex items-start gap-3 text-red-700">
+          <div className="bg-destructive/10 border border-destructive/20 rounded-xl p-4 mb-6 flex items-start gap-3 text-destructive">
             <AlertCircle className="w-5 h-5 mt-0.5" />
             <div>
               <p className="font-medium">Unable to load insights.</p>
               <p className="text-sm">{productError?.message || timeseriesError?.message || 'Please try again.'}</p>
               <div className="flex gap-4 mt-2">
-                <button onClick={refetchProducts} className="text-indigo-600 hover:text-indigo-700 text-sm">
+                <button onClick={refetchProducts} className="text-primary hover:text-primary/80 text-sm">
                   Retry Products
                 </button>
-                <button onClick={refetchTimeseries} className="text-indigo-600 hover:text-indigo-700 text-sm">
+                <button onClick={refetchTimeseries} className="text-primary hover:text-primary/80 text-sm">
                   Retry Trends
                 </button>
               </div>
@@ -142,26 +142,26 @@ export function ProductInsightsPage() {
         )}
 
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-          <div className="bg-white rounded-xl shadow-sm p-6">
-            <h2 className="text-gray-900 mb-4">Top Performing Products</h2>
+          <div className="bg-card border border-border/70 rounded-xl shadow-sm p-6">
+            <h2 className="text-foreground mb-4">Top Performing Products</h2>
             {productLoading ? (
-              <p className="text-gray-500">Loading...</p>
+              <p className="text-muted-foreground">Loading...</p>
             ) : profitableProducts.length === 0 ? (
-              <p className="text-gray-500">No profitable products in this period</p>
+              <p className="text-muted-foreground">No profitable products in this period</p>
             ) : (
               <div className="space-y-4">
                 {profitableProducts.slice(0, 5).map((product, index) => (
-                  <div key={product.productName} className="bg-gray-50 rounded-lg p-4 flex items-center justify-between">
+                  <div key={product.productName} className="bg-muted/40 rounded-lg p-4 flex items-center justify-between">
                     <div>
-                      <p className="text-gray-900 font-medium">{product.productName}</p>
-                      <p className="text-sm text-gray-500">Profit Margin: {product.profitMargin.toFixed(1)}%</p>
+                      <p className="text-foreground font-medium">{product.productName}</p>
+                      <p className="text-sm text-muted-foreground">Profit Margin: {product.profitMargin.toFixed(1)}%</p>
                     </div>
                     <div className="text-right">
-                      <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs bg-green-100 text-green-800 mb-1">
+                      <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs bg-primary/10 text-primary mb-1">
                         <TrendingUp className="w-4 h-4 mr-1" />
                         Rank #{index + 1}
                       </span>
-                      <p className="text-green-600 text-lg">
+                      <p className="text-primary text-lg">
                         +₹{product.profit.toLocaleString()}
                       </p>
                     </div>
@@ -171,26 +171,26 @@ export function ProductInsightsPage() {
             )}
           </div>
 
-          <div className="bg-white rounded-xl shadow-sm p-6">
-            <h2 className="text-gray-900 mb-4">Loss-Making Products</h2>
+          <div className="bg-card border border-border/70 rounded-xl shadow-sm p-6">
+            <h2 className="text-foreground mb-4">Loss-Making Products</h2>
             {productLoading ? (
-              <p className="text-gray-500">Loading...</p>
+              <p className="text-muted-foreground">Loading...</p>
             ) : lossProducts.length === 0 ? (
-              <p className="text-gray-500">No loss-making products in this period</p>
+              <p className="text-muted-foreground">No loss-making products in this period</p>
             ) : (
               <div className="space-y-4">
                 {lossProducts.slice(0, 5).map(product => (
-                  <div key={product.productName} className="bg-gray-50 rounded-lg p-4 flex items-center justify-between">
+                  <div key={product.productName} className="bg-muted/40 rounded-lg p-4 flex items-center justify-between">
                     <div>
-                      <p className="text-gray-900 font-medium">{product.productName}</p>
-                      <p className="text-sm text-gray-500">Profit Margin: {product.profitMargin.toFixed(1)}%</p>
+                      <p className="text-foreground font-medium">{product.productName}</p>
+                      <p className="text-sm text-muted-foreground">Profit Margin: {product.profitMargin.toFixed(1)}%</p>
                     </div>
                     <div className="text-right">
-                      <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs bg-red-100 text-red-800 mb-1">
+                      <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs bg-destructive/10 text-destructive mb-1">
                         <TrendingDown className="w-4 h-4 mr-1" />
                         Loss
                       </span>
-                      <p className="text-red-600 text-lg">
+                      <p className="text-destructive text-lg">
                         -₹{Math.abs(product.profit).toLocaleString()}
                       </p>
                     </div>
@@ -201,12 +201,12 @@ export function ProductInsightsPage() {
           </div>
         </div>
 
-        <div className="bg-white rounded-xl shadow-sm p-6 mt-6">
-          <h2 className="text-gray-900 mb-4">Sales vs Purchases vs Expenses</h2>
+        <div className="bg-card border border-border/70 rounded-xl shadow-sm p-6 mt-6">
+          <h2 className="text-foreground mb-4">Sales vs Purchases vs Expenses</h2>
           {timeseriesLoading ? (
-            <p className="text-gray-500">Loading trends...</p>
+            <p className="text-muted-foreground">Loading trends...</p>
           ) : timeseriesData.length === 0 ? (
-            <p className="text-gray-500">No data available for this range</p>
+            <p className="text-muted-foreground">No data available for this range</p>
           ) : (
             <ResponsiveContainer width="100%" height={320}>
               <LineChart data={timeseriesData}>
@@ -218,26 +218,26 @@ export function ProductInsightsPage() {
                   formatter={(val: number) => `₹${val.toLocaleString()}`}
                 />
                 <Legend />
-                <Line type="monotone" dataKey="sales" stroke="#16a34a" name="Sales" />
-                <Line type="monotone" dataKey="purchases" stroke="#dc2626" name="Purchases" />
-                <Line type="monotone" dataKey="expenses" stroke="#f97316" name="Expenses" />
+                <Line type="monotone" dataKey="sales" stroke="var(--chart-2)" name="Sales" />
+                <Line type="monotone" dataKey="purchases" stroke="var(--chart-4)" name="Purchases" />
+                <Line type="monotone" dataKey="expenses" stroke="var(--chart-3)" name="Expenses" />
               </LineChart>
             </ResponsiveContainer>
           )}
         </div>
 
-        <div className="bg-white rounded-xl shadow-sm p-6 mt-6">
-          <h2 className="text-gray-900 mb-4">Break-even Products</h2>
+        <div className="bg-card border border-border/70 rounded-xl shadow-sm p-6 mt-6">
+          <h2 className="text-foreground mb-4">Break-even Products</h2>
           {productLoading ? (
-            <p className="text-gray-500">Loading...</p>
+            <p className="text-muted-foreground">Loading...</p>
           ) : breakEvenProducts.length === 0 ? (
-            <p className="text-gray-500">No break-even products in this period</p>
+            <p className="text-muted-foreground">No break-even products in this period</p>
           ) : (
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
               {breakEvenProducts.map(product => (
-                <div key={product.productName} className="bg-gray-50 rounded-lg p-4">
-                  <p className="text-gray-900 font-medium">{product.productName}</p>
-                  <p className="text-sm text-gray-500 mt-1">
+                <div key={product.productName} className="bg-muted/40 rounded-lg p-4">
+                  <p className="text-foreground font-medium">{product.productName}</p>
+                  <p className="text-sm text-muted-foreground mt-1">
                     Sales equal purchases ({filterLabel})
                   </p>
                 </div>

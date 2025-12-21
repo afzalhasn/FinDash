@@ -20,12 +20,12 @@ export function PageHeader({ title, subtitle, backButton, actions, onTitleClick 
   const BackIcon = backButton?.icon;
 
   return (
-    <header className="bg-white border-b border-gray-200 sticky top-0 z-10">
+    <header className="bg-card/90 border-b border-border/70 sticky top-0 z-10 backdrop-blur">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4 flex flex-col gap-3">
         {backButton && (
           <button
             onClick={backButton.onClick}
-            className="flex items-center gap-2 text-gray-600 hover:text-gray-900 w-fit"
+            className="flex items-center gap-2 text-muted-foreground hover:text-foreground w-fit"
           >
             {BackIcon ? <BackIcon className="w-5 h-5" /> : null}
             <span>{backButton.label}</span>
@@ -37,14 +37,14 @@ export function PageHeader({ title, subtitle, backButton, actions, onTitleClick 
               <button
                 type="button"
                 onClick={onTitleClick}
-                className="text-left text-gray-900 hover:text-indigo-600 transition-colors"
+                className="text-left text-foreground hover:text-primary transition-colors"
               >
                 <h1>{title}</h1>
               </button>
             ) : (
-              <h1 className="text-gray-900">{title}</h1>
+              <h1 className="text-foreground">{title}</h1>
             )}
-            {subtitle && <p className="text-gray-600">{subtitle}</p>}
+            {subtitle && <p className="text-muted-foreground">{subtitle}</p>}
           </div>
           {actions ? (
             <div className={cn('flex items-center gap-3 flex-wrap justify-end')}>{actions}</div>
